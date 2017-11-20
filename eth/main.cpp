@@ -64,6 +64,9 @@
 #include "BuildInfo.h"
 #include "AccountManager.h"
 
+#include <boost/thread/thread.hpp>
+#include <Python.h>
+
 using namespace std;
 using namespace dev;
 using namespace dev::p2p;
@@ -278,7 +281,10 @@ class ExitHandler: public rpc::SystemManager
 {
 public:
 	void exit() { exitHandler(0); }
-	static void exitHandler(int) { s_shouldExit = true; }
+	static void exitHandler(int)
+	{
+	   s_shouldExit = true;
+	}
 	bool shouldExit() const { return s_shouldExit; }
 
 private:
@@ -287,9 +293,41 @@ private:
 
 bool ExitHandler::s_shouldExit = false;
 
+static unique_ptr<ModularServer<>> jsonrpcIpcServer;
+
+#define MAXPATHLEN 1024
+static wchar_t env_home[MAXPATHLEN+1];
+extern "C" PyObject* PyInit_eth_();
+
+static bool eth_finished = false;
+int eth_main(int argc, char** argv);
+
 int main(int argc, char** argv)
 {
-	setDefaultOrCLocale();
+   auto thread_ = boost::thread(eth_main, argc, argv);
+
+   const char *chome = "/Users/newworld/dev/pyeos/libraries/python/dist";
+   mbstowcs(env_home, chome, sizeof(env_home)/sizeof(env_home[0]));
+   Py_SetPythonHome(env_home);
+   Py_InitializeEx(1);
+   PyEval_InitThreads();
+
+   PyRun_SimpleString("import sys");
+   PyRun_SimpleString("from imp import reload");
+   PyRun_SimpleString("sys.path.append('../eth')");
+
+   PyInit_eth_();
+   PyRun_SimpleString("import eth");
+   PyRun_SimpleString("import web3");
+
+   PyRun_SimpleString("import readline");
+   PyRun_InteractiveLoop(stdin, "<stdin>");
+
+}
+
+int eth_main(int argc, char** argv)
+{
+   setDefaultOrCLocale();
 
 	// Init secp256k1 context by calling one of the functions.
 	toPublic({});
@@ -1121,7 +1159,7 @@ int main(int argc, char** argv)
 		cout << "Networking disabled. To start, use netstart or pass --bootstrap or a remote host.\n";
 
 	unique_ptr<ModularServer<>> jsonrpcHttpServer;
-	unique_ptr<ModularServer<>> jsonrpcIpcServer;
+   unique_ptr<ModularServer<>> jsonrpcPyServer;
 	unique_ptr<rpc::SessionManager> sessionManager;
 	unique_ptr<SimpleAccountHolder> accountHolder;
 
@@ -1210,7 +1248,6 @@ int main(int argc, char** argv)
 			jsonrpcIpcServer->addConnector(ipcConnector);
 			ipcConnector->StartListening();
 		}
-
 		if (jsonAdmin.empty())
 			jsonAdmin = sessionManager->newSession(rpc::SessionPermissions{{rpc::Privilege::Admin}});
 		else
@@ -1233,23 +1270,26 @@ int main(int argc, char** argv)
 	if (!remoteHost.empty())
 		web3.addNode(p2p::NodeID(), remoteHost + ":" + toString(remotePort));
 
+#if 0
 	signal(SIGABRT, &ExitHandler::exitHandler);
 	signal(SIGTERM, &ExitHandler::exitHandler);
 	signal(SIGINT, &ExitHandler::exitHandler);
+#endif
 
 	if (c)
 	{
-		unsigned n = c->blockChain().details().number;
+	   unsigned n = c->blockChain().details().number;
 		if (mining)
 			c->startSealing();
 
-		while (!exitHandler.shouldExit())
-			stopSealingAfterXBlocks(c, n, mining);
+		while (!exitHandler.shouldExit()) {
+         stopSealingAfterXBlocks(c, n, mining);
+		}
 	}
 	else
 		while (!exitHandler.shouldExit())
 			this_thread::sleep_for(chrono::milliseconds(1000));
-
+	printf("exit eth...\n");
 	if (jsonrpcHttpServer.get())
 		jsonrpcHttpServer->StopListening();
 	if (jsonrpcIpcServer.get())
@@ -1258,5 +1298,21 @@ int main(int argc, char** argv)
 	auto netData = web3.saveNetwork();
 	if (!netData.empty())
 		writeFile(getDataDir() / fs::path("network.rlp"), netData);
+
+	eth_finished = true;
 	return 0;
 }
+
+void handle_request(string& request, string& response) {
+   jsonrpcIpcServer->getHandler()->HandleRequest(request, response);
+}
+
+void quit_eth()
+{
+   ExitHandler::exitHandler(0);
+   while (!eth_finished)
+   {
+      this_thread::sleep_for(chrono::milliseconds(100));
+   }
+}
+

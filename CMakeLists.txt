@@ -151,7 +151,7 @@ endif()
 
 if (TESTS)
     enable_testing()
-    add_subdirectory(test)
+#    add_subdirectory(test)
 endif()
 
 # TODO: Split out json_spirit, libscrypt and sec256k1.

@@ -2,6 +2,11 @@
 *.slo
 *.lo
 *.o
+*.wrap.cpp
+.settings
+.cproject
+.project
+.pydevproject
 
 # Compiled Dynamic libraries
 *.so
