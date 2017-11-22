@@ -301,7 +301,18 @@ extern "C" PyObject* PyInit_eth_();
 
 static bool eth_finished = false;
 int eth_main(int argc, char** argv);
+class EthFinish
+{
+public:
+   EthFinish()
+   {
 
+   }
+   ~EthFinish()
+   {
+      eth_finished = true;
+   }
+};
 int main(int argc, char** argv)
 {
    auto thread_ = boost::thread(eth_main, argc, argv);
@@ -317,16 +328,21 @@ int main(int argc, char** argv)
    PyRun_SimpleString("sys.path.append('../eth')");
 
    PyInit_eth_();
-   PyRun_SimpleString("import eth");
-   PyRun_SimpleString("import web3");
-
+   PyRun_SimpleString("from eth import eth");
+   PyRun_SimpleString("from web3 import web");
+   PyRun_SimpleString("import admin");
+   PyRun_SimpleString("import personal");
+//   PyRun_SimpleString("admin.miner.setEtherbase('0x4b8823fda79d1898bd820a4765a94535d90babf3');admin.miner.start()");
    PyRun_SimpleString("import readline");
    PyRun_InteractiveLoop(stdin, "<stdin>");
 
 }
 
+string jsonAdmin;
+
 int eth_main(int argc, char** argv)
 {
+   EthFinish eth;
    setDefaultOrCLocale();
 
 	// Init secp256k1 context by calling one of the functions.
@@ -366,7 +382,6 @@ int eth_main(int argc, char** argv)
 	bool ipc = true;
 	std::string rpcCorsDomain = "";
 
-	string jsonAdmin;
 	ChainParams chainParams;
 	u256 gasFloor = Invalid256;
 	string privateChain;
@@ -1316,3 +1331,13 @@ void quit_eth()
    }
 }
 
+string& get_key_()
+{
+   while (jsonAdmin.empty()) {
+      if (eth_finished) {
+         break;
+      }
+      this_thread::sleep_for(chrono::milliseconds(1000));
+   }
+   return jsonAdmin;
+}
