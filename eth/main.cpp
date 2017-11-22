@@ -300,7 +300,10 @@ static wchar_t env_home[MAXPATHLEN+1];
 extern "C" PyObject* PyInit_eth_();
 
 static bool eth_finished = false;
+static bool init_finished = false;
+
 int eth_main(int argc, char** argv);
+
 class EthFinish
 {
 public:
@@ -316,7 +319,10 @@ public:
 int main(int argc, char** argv)
 {
    auto thread_ = boost::thread(eth_main, argc, argv);
-
+   while(!init_finished)
+   {
+      this_thread::sleep_for(chrono::milliseconds(50));
+   }
    const char *chome = "/Users/newworld/dev/pyeos/libraries/python/dist";
    mbstowcs(env_home, chome, sizeof(env_home)/sizeof(env_home[0]));
    Py_SetPythonHome(env_home);
@@ -332,7 +338,9 @@ int main(int argc, char** argv)
    PyRun_SimpleString("from web3 import web");
    PyRun_SimpleString("import admin");
    PyRun_SimpleString("import personal");
-//   PyRun_SimpleString("admin.miner.setEtherbase('0x4b8823fda79d1898bd820a4765a94535d90babf3');admin.miner.start()");
+   PyRun_SimpleString("from eth_test import test");
+   PyRun_SimpleString("admin.miner.setEtherbase('0x4b8823fda79d1898bd820a4765a94535d90babf3')");
+   //   PyRun_SimpleString("admin.miner.setEtherbase('0x4b8823fda79d1898bd820a4765a94535d90babf3');admin.miner.start()");
    PyRun_SimpleString("import readline");
    PyRun_InteractiveLoop(stdin, "<stdin>");
 
@@ -1290,7 +1298,7 @@ int eth_main(int argc, char** argv)
 	signal(SIGTERM, &ExitHandler::exitHandler);
 	signal(SIGINT, &ExitHandler::exitHandler);
 #endif
-
+	init_finished = true;
 	if (c)
 	{
 	   unsigned n = c->blockChain().details().number;
