@@ -32,7 +32,8 @@ class Eth(object):
     
     @property
     def blockNumber(self):
-        return _rpc_call("eth_blockNumber", [])
+        num = _rpc_call("eth_blockNumber", [])
+        return int(num, 16)
 
     def getBalance(self, address, block='latest'):
         return _rpc_call("eth_getBalance", [address, block])

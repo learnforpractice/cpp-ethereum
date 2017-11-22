@@ -19,7 +19,7 @@ def _rpc_call(method, params):
 #    print(ret)
     if hasattr(ret,'result'):
         return ret.result
-    
+    print(request)
     raise Exception(str(ret))
 
 
