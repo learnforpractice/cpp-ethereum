@@ -46,6 +46,8 @@ public:
 	virtual bool miner_setExtra(std::string const& _extraData) override;
 	virtual bool miner_setGasPrice(std::string const& _gasPrice) override;
 	virtual std::string miner_hashrate() override;
+	virtual Json::Value miner_chainInfo() override;
+
 
 	virtual void setMiningBenefactorChanger(std::function<void(Address const&)> const& _f) { m_setMiningBenefactor = _f; }
 private:

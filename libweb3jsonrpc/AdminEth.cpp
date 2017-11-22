@@ -250,6 +250,13 @@ bool AdminEth::miner_stop()
 	return true;
 }
 
+Json::Value AdminEth::miner_chainInfo() {
+   Json::Value ret;
+   auto& params = m_eth.blockChain().chainParams();
+   ret["diff"] = toJS(params.difficulty);
+   return ret;
+}
+
 bool AdminEth::miner_setEtherbase(string const& _uuidOrAddress)
 {
 	Address a;
