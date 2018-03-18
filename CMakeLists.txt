@@ -109,12 +109,12 @@ if (EVMJIT)
     add_subdirectory(evmjit)
 endif()
 
-#add_subdirectory(eth)
+add_subdirectory(eth)
 
 if (TOOLS)
-#    add_subdirectory(ethkey)
-#    add_subdirectory(ethvm)
-#    add_subdirectory(rlp)
+    add_subdirectory(ethkey)
+    add_subdirectory(ethvm)
+    add_subdirectory(rlp)
 endif()
 
 if (TESTS)
