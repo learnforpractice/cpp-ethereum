@@ -89,6 +89,7 @@ endif()
 
 configure_project()
 
+add_subdirectory(utils)
 add_subdirectory(libdevcore)
 add_subdirectory(libdevcrypto)
 add_subdirectory(libp2p)
@@ -122,4 +123,3 @@ if (TESTS)
 endif()
 
 # TODO: Split out json_spirit, libscrypt and sec256k1.
-add_subdirectory(utils)
