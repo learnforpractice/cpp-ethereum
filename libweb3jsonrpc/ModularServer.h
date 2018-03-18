@@ -114,6 +114,10 @@ public:
 		return m_connectors.size() - 1;
 	}
 
+	jsonrpc::IProtocolHandler* getHandler() {
+	   return m_handler.get();
+	}
+
 	jsonrpc::AbstractServerConnector* connector(unsigned _i) const
 	{
 		return m_connectors.at(_i).get();

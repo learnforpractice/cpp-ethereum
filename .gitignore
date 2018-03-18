@@ -2,6 +2,11 @@
 *.slo
 *.lo
 *.o
+*.wrap.cpp
+.settings
+.cproject
+.project
+.pydevproject
 
 # Compiled Dynamic libraries
 *.so
@@ -78,4 +83,4 @@ doc/html
 node_modules/
 
 dependency_graph.svg
-test/jsontests
+

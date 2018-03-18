@@ -403,7 +403,7 @@ void NodeTable::onReceived(UDPSocketFace*, bi::udp::endpoint const& _from, bytes
 			return;
 		if (packet->isExpired())
 		{
-			clog(NodeTableWarn) << "Invalid packet (timestamp in the past) from " << _from.address().to_string() << ":" << _from.port();
+//			clog(NodeTableWarn) << "Invalid packet (timestamp in the past) from " << _from.address().to_string() << ":" << _from.port();
 			return;
 		}
 

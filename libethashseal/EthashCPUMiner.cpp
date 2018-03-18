@@ -73,8 +73,9 @@ void EthashCPUMiner::workLoop()
 		dag = EthashAux::full(w.seedHash, false);
 	}
 
-	h256 boundary = w.boundary;
+	h256 boundary(string("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"));//w.boundary;
 	unsigned hashCount = 1;
+	printf("boundary : %s\n", boundary.hex().c_str());
 	for (; !shouldStop(); tryNonce++, hashCount++)
 	{
 		ethashReturn = ethash_full_compute(dag->full, *(ethash_h256_t*)w.headerHash().data(), tryNonce);
