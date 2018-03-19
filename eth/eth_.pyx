@@ -2,7 +2,6 @@ import json
 import signal
 import atexit
 
-import util
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 from libcpp.map cimport map
@@ -12,12 +11,38 @@ cdef extern from "../eth_.h":
     cdef void quit_eth()
     cdef string& get_key_()
 
+
+class JsonStruct(object):
+    def __init__(self, js):
+        if isinstance(js, bytes):
+            js = js.decode('utf8')
+            js = json.loads(js)
+            if isinstance(js, str):
+                js = json.loads(js)
+        for key in js:
+            value = js[key]
+            if isinstance(value, dict):
+                self.__dict__[key] = JsonStruct(value)
+            elif isinstance(value, list):
+                for i in range(len(value)):
+                    v = value[i]
+                    if isinstance(v, dict):
+                        value[i] = JsonStruct(v)
+                self.__dict__[key] = value
+            else:
+                self.__dict__[key] = value
+    def __str__(self):
+        return str(self.__dict__)
+#        return json.dumps(self, default=lambda x: x.__dict__,sort_keys=False,indent=4, separators=(',', ': '))
+    def __repr__(self):
+        return json.dumps(self, default=lambda x: x.__dict__, sort_keys=False, indent=4, separators=(',', ': '))
+
 def rpc_call(request):
     cdef string response
     cdef string request_
     request_ = request
     handle_request(request_, response)
-    return util.JsonStruct(response)
+    return JsonStruct(response)
 
 def get_key():
     key = get_key_()

@@ -33,6 +33,7 @@ struct Defaults
 {
 	friend class BlockChain;
 	friend class State;
+	friend class EosState;
 
 public:
 	Defaults();

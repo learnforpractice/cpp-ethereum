@@ -35,6 +35,92 @@ void Account::setCode(bytes&& _code)
 	m_codeHash = sha3(m_codeCache);
 }
 
+
+/// Kill this account. Useful for the suicide opcode. Following this call, isAlive() returns false.
+void Account::kill() {
+	m_isAlive = false; m_storageOverlay.clear(); m_codeHash = EmptySHA3; m_storageRoot = EmptyTrie; m_balance = 0; m_nonce = 0; changed();
+}
+
+/// @returns true iff this object represents an account in the state. Returns false if this object
+/// represents an account that should no longer exist in the trie (an account that never existed or was
+/// suicided).
+bool Account::isAlive() const {
+	return m_isAlive;
+}
+
+/// @returns true if the account is unchanged from creation.
+bool Account::isDirty() const { return !m_isUnchanged; }
+
+void Account::untouch() { m_isUnchanged = true; }
+
+/// @returns true if the nonce, balance and code is zero / empty. Code is considered empty
+/// during creation phase.
+bool Account::isEmpty() const { return nonce() == 0 && balance() == 0 && codeHash() == EmptySHA3; }
+
+/// @returns the balance of this account.
+u256 const& Account::balance() const { return m_balance; }
+
+/// Increments the balance of this account by the given amount.
+void Account::addBalance(u256 _value) { m_balance += _value; changed(); }
+
+/// @returns the nonce of the account.
+u256 Account::nonce() const { return m_nonce; }
+
+/// Increment the nonce of the account by one.
+void Account::incNonce() { ++m_nonce; changed(); }
+
+/// Set nonce to a new value. This is used when reverting changes made to
+/// the account.
+void Account::setNonce(u256 const& _nonce) { m_nonce = _nonce; changed(); }
+
+
+/// @returns the root of the trie (whose nodes are stored in the state db externally to this class)
+/// which encodes the base-state of the account's storage (upon which the storage is overlaid).
+h256 Account::baseRoot() const { assert(m_storageRoot); return m_storageRoot; }
+
+/// @returns the storage overlay as a simple hash map.
+std::unordered_map<u256, u256> const& Account::storageOverlay() const {
+	cout<< "++++++++++++++++++++++++Account::storageOverlay()\n";
+	return m_storageOverlay;
+}
+
+/// Set a key/value pair in the account's storage. This actually goes into the overlay, for committing
+/// to the trie later.
+void Account::setStorage(u256 _p, u256 _v) {
+	cout<< "++++++++++++++++++++++++setStorage:" << _p.str() << ":" << _v.str() << endl;
+	m_storageOverlay[_p] = _v; changed();
+}
+
+/// Empty the storage.  Used when a contract is overwritten.
+void Account::clearStorage() { m_storageOverlay.clear(); m_storageRoot = EmptyTrie; changed(); }
+
+/// Set the storage root.  Used when clearStorage() is reverted.
+void Account::setStorageRoot(h256 const& _root) { m_storageOverlay.clear(); m_storageRoot = _root; changed(); }
+
+/// Set a key/value pair in the account's storage to a value that is already present inside the
+/// database.
+void Account::setStorageCache(u256 _p, u256 _v) const {
+	cout<< "++++++++++++++++++++++++setStorageCache:" << _p.str() << ":" << _v.str() << endl;
+	const_cast<decltype(m_storageOverlay)&>(m_storageOverlay)[_p] = _v;
+}
+
+/// @returns the hash of the account's code.
+h256 Account::codeHash() const { return m_codeHash; }
+
+bool Account::hasNewCode() const { return m_hasNewCode; }
+
+/// Reset the code set by previous CREATE message.
+void Account::resetCode() { m_codeCache.clear(); m_hasNewCode = false; m_codeHash = EmptySHA3; }
+
+/// Specify to the object what the actual code is for the account. @a _code must have a SHA3 equal to
+/// codeHash() and must only be called when isFreshCode() returns false.
+void Account::noteCode(bytesConstRef _code) { assert(sha3(_code) == m_codeHash); m_codeCache = _code.toBytes(); }
+
+/// @returns the account's code.
+bytes const& Account::code() const { return m_codeCache; }
+
+
+
 namespace js = json_spirit;
 
 namespace

@@ -331,7 +331,7 @@ int main(int argc, char** argv)
 
    PyRun_SimpleString("import sys");
    PyRun_SimpleString("from imp import reload");
-   PyRun_SimpleString("sys.path.append('../eth')");
+   PyRun_SimpleString("sys.path.append('../../../libraries/ethereum/eth')");
 
    PyInit_eth_();
    PyRun_SimpleString("from eth import eth");
