@@ -221,27 +221,27 @@ public:
 	void executeBlockTransactions(Block const& _block, unsigned _txCount, LastBlockHashesFace const& _lastHashes, SealEngineFace const& _sealEngine);
 
 	/// Check if the address is in use.
-	bool addressInUse(Address const& _address) const;
+	virtual bool addressInUse(Address const& _address) const;
 
 	/// Check if the account exists in the state and is non empty (nonce > 0 || balance > 0 || code nonempty).
 	/// These two notions are equivalent after EIP158.
-	bool accountNonemptyAndExisting(Address const& _address) const;
+	virtual bool accountNonemptyAndExisting(Address const& _address) const;
 
 	/// Check if the address contains executable code.
-	bool addressHasCode(Address const& _address) const;
+	virtual bool addressHasCode(Address const& _address) const;
 
 	/// Get an account's balance.
 	/// @returns 0 if the address has never been used.
-	u256 balance(Address const& _id) const;
+	virtual u256 balance(Address const& _id) const;
 
 	/// Add some amount to balance.
 	/// Will initialise the address if it has never been used.
-	void addBalance(Address const& _id, u256 const& _amount);
+	virtual void addBalance(Address const& _id, u256 const& _amount);
 
 	/// Subtract the @p _value amount from the balance of @p _addr account.
 	/// @throws NotEnoughCash if the balance of the account is less than the
 	/// amount to be subtrackted (also in case the account does not exist).
-	void subBalance(Address const& _addr, u256 const& _value);
+	virtual void subBalance(Address const& _addr, u256 const& _value);
 
 	/**
 	 * @brief Transfers "the balance @a _value between two accounts.
@@ -249,58 +249,58 @@ public:
 	 * @param _to Account to which @a _value will be added.
 	 * @param _value Amount to be transferred.
 	 */
-	void transferBalance(Address const& _from, Address const& _to, u256 const& _value) { subBalance(_from, _value); addBalance(_to, _value); }
+	virtual void transferBalance(Address const& _from, Address const& _to, u256 const& _value) { subBalance(_from, _value); addBalance(_to, _value); }
 
 	/// Get the root of the storage of an account.
 	h256 storageRoot(Address const& _contract) const;
 
 	/// Get the value of a storage position of an account.
 	/// @returns 0 if no account exists at that address.
-	u256 storage(Address const& _contract, u256 const& _memory) const;
+	virtual u256 storage(Address const& _contract, u256 const& _memory) const;
 
 	/// Set the value of a storage position of an account.
-	void setStorage(Address const& _contract, u256 const& _location, u256 const& _value);
+	virtual void setStorage(Address const& _contract, u256 const& _location, u256 const& _value);
 
 	/// Clear the storage root hash of an account to the hash of the empty trie.
-	void clearStorage(Address const& _contract);
+	virtual void clearStorage(Address const& _contract);
 
 	/// Create a contract at the given address (with unset code and unchanged balance).
 	void createContract(Address const& _address);
 
 	/// Sets the code of the account. Must only be called during / after contract creation.
-	void setCode(Address const& _address, bytes&& _code);
+	virtual void setCode(Address const& _address, bytes&& _code);
 
 	/// Delete an account (used for processing suicides).
-	void kill(Address _a);
+	virtual void kill(Address _a);
 
 	/// Get the storage of an account.
 	/// @note This is expensive. Don't use it unless you need to.
 	/// @returns map of hashed keys to key-value pairs or empty map if no account exists at that address.
-	std::map<h256, std::pair<u256, u256>> storage(Address const& _contract) const;
+	virtual std::map<h256, std::pair<u256, u256>> storage(Address const& _contract) const;
 
 	/// Get the code of an account.
 	/// @returns bytes() if no account exists at that address.
 	/// @warning The reference to the code is only valid until the access to
 	///          other account. Do not keep it.
-	bytes const& code(Address const& _addr) const;
+	virtual bytes const& code(Address const& _addr) const;
 
 	/// Get the code hash of an account.
 	/// @returns EmptySHA3 if no account exists at that address or if there is no code associated with the address.
-	h256 codeHash(Address const& _contract) const;
+	virtual h256 codeHash(Address const& _contract) const;
 
 	/// Get the byte-size of the code of an account.
 	/// @returns code(_contract).size(), but utilizes CodeSizeHash.
-	size_t codeSize(Address const& _contract) const;
+	virtual size_t codeSize(Address const& _contract) const;
 
 	/// Increament the account nonce.
-	void incNonce(Address const& _id);
+	virtual void incNonce(Address const& _id);
 
 	/// Set the account nonce.
 	void setNonce(Address const& _addr, u256 const& _newNonce);
 
 	/// Get the account nonce -- the number of transactions it has sent.
 	/// @returns 0 if the address has never been used.
-	u256 getNonce(Address const& _addr) const;
+	virtual u256 getNonce(Address const& _addr) const;
 
 	/// The hash of the root of our state tree.
 	h256 rootHash() const { return m_state.root(); }
@@ -314,19 +314,19 @@ public:
 
 	/// Get the account start nonce. May be required.
 	u256 const& accountStartNonce() const { return m_accountStartNonce; }
-	u256 const& requireAccountStartNonce() const;
+	virtual u256 const& requireAccountStartNonce() const;
 	void noteAccountStartNonce(u256 const& _actual);
 
 	/// Create a savepoint in the state changelog.	///
 	/// @return The savepoint index that can be used in rollback() function.
-	size_t savepoint() const;
+	virtual size_t savepoint() const;
 
 	/// Revert all recent changes up to the given @p _savepoint savepoint.
-	void rollback(size_t _savepoint);
+	virtual void rollback(size_t _savepoint);
 
 	ChangeLog const& changeLog() const { return m_changeLog; }
 
-private:
+protected:
 	/// Turns all "touched" empty accounts into non-alive accounts.
 	void removeEmptyAccounts();
 
