@@ -80,14 +80,14 @@ h256 Account::baseRoot() const { assert(m_storageRoot); return m_storageRoot; }
 
 /// @returns the storage overlay as a simple hash map.
 std::unordered_map<u256, u256> const& Account::storageOverlay() const {
-	cout<< "++++++++++++++++++++++++Account::storageOverlay()\n";
+//	cout<< "++++++++++++++++++++++++Account::storageOverlay()\n";
 	return m_storageOverlay;
 }
 
 /// Set a key/value pair in the account's storage. This actually goes into the overlay, for committing
 /// to the trie later.
 void Account::setStorage(u256 _p, u256 _v) {
-	cout<< "++++++++++++++++++++++++setStorage:" << _p.str() << ":" << _v.str() << endl;
+//	cout<< "++++++++++++++++++++++++setStorage:" << _p.str() << ":" << _v.str() << endl;
 	m_storageOverlay[_p] = _v; changed();
 }
 
@@ -100,7 +100,7 @@ void Account::setStorageRoot(h256 const& _root) { m_storageOverlay.clear(); m_st
 /// Set a key/value pair in the account's storage to a value that is already present inside the
 /// database.
 void Account::setStorageCache(u256 _p, u256 _v) const {
-	cout<< "++++++++++++++++++++++++setStorageCache:" << _p.str() << ":" << _v.str() << endl;
+//	cout<< "++++++++++++++++++++++++Account::setStorageCache:" << _p.str() << ":" << _v.str() << endl;
 	const_cast<decltype(m_storageOverlay)&>(m_storageOverlay)[_p] = _v;
 }
 
