@@ -10,7 +10,8 @@ class Producer(object):
         self.provider = provider
     
     def produce_block(self):
-        self.provider.make_request('test_mineBlocks', [1])
+        pass
+#        self.provider.make_request('test_mineBlocks', [1])
 
     def __call__(self):
         self.produce_block()
@@ -201,6 +202,46 @@ contract MotionToken is StandardToken {
 }
 '''
 
+from eth_utils import (
+    to_dict,
+)
+
+class LocalProvider(web3.providers.base.JSONBaseProvider):
+    endpoint_uri = None
+    _request_args = None
+    _request_kwargs = None
+
+    def __init__(self, endpoint_uri, request_kwargs=None):
+        self.endpoint_uri = endpoint_uri
+        self._request_kwargs = request_kwargs or {}
+        super(LocalProvider, self).__init__()
+
+    def __str__(self):
+        return "RPC connection {0}".format(self.endpoint_uri)
+
+    @to_dict
+    def get_request_kwargs(self):
+        if 'headers' not in self._request_kwargs:
+            yield 'headers', self.get_request_headers()
+        for key, value in self._request_kwargs.items():
+            yield key, value
+
+    def get_request_headers(self):
+        return {
+            'Content-Type': 'application/json',
+            'User-Agent': construct_user_agent(str(type(self))),
+        }
+
+    def make_request(self, method, params):
+        print('+++++++++++++', method, params)
+        request_data = self.encode_rpc_request(method, params)
+        raw_response = make_post_request(
+            self.endpoint_uri,
+            request_data,
+            **self.get_request_kwargs()
+        )
+        response = self.decode_rpc_response(raw_response)
+        return response
 
 TEST = False
 DEPLOY = True
@@ -211,7 +252,7 @@ producer = None
 contract = None
 contract_address = None
 
-provider = HTTPProvider('http://localhost:8545')
+provider = LocalProvider('http://localhost:8545')
 producer = Producer(provider)
 
 if TEST:
@@ -252,36 +293,16 @@ def compile(main_class):
 
     json.dumps(contract_interface['abi'], sort_keys=False, indent=4, separators=(',', ': '))
 
-    address = w3.eth.accounts[0]
-    print('+++++++++w3.eth.accounts[0]:', address)
-    print('+++++++++w3.eth.blockNumber:', w3.eth.blockNumber)
 
 def deploy():
     global contract_address
     with producer:
         # Get transaction hash from deployed contract
-        address = w3.eth.accounts[0]
-
-        r = w3.eth.getBlock('latest')
-        print(r)
-        
-        r = w3.eth.estimateGas("{'from': 'evm', 'to': '0x000000000000e456000000000000000000000000', 'data': '0x55241077000000000000000000000000000000000000000000000000000000000001d0d8'}")
-        print('----------w3.eth.blockNumber:', w3.eth.blockNumber)
+        address = '0x5c5ad149D975c0f6EcB9F19BA2F917AFdCD0AA41' #w3.eth.accounts[0]
         with producer:
             tx_hash = contract.deploy(transaction={'from': address, 'gas': 2000001350})
 #            tx_hash = contract.deploy(transaction={'from': address})
             print('tx_hash:', tx_hash)
-        print('----------w3.eth.blockNumber:', w3.eth.blockNumber)
-
-        # Get tx receipt to get contract address
-        tx_receipt = w3.eth.getTransactionReceipt(tx_hash)
-##        print('tx_receipt:', tx_receipt)
-        contract_address = tx_receipt['contractAddress']
-        
-        print('-------------------------:', tx_receipt.contractAddress)
-
-##        print(tx_receipt)
-        print('contract_address:', contract_address)
 
 #    contract_address = '0x5c5ad149D975c0f6EcB9F19BA2F917AFdCD0AA41'
 
@@ -316,7 +337,7 @@ def set_greeting():
 
 #    r = contract_instance.getDiff(transact={'from': address})
 #    print(r)
-    print('////////////////////:', contract_instance)
+
     r = contract_instance.setValue(119000, transact={'from': address})
     print('++++++++++++setValue:', r)
 
