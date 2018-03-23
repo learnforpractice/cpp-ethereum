@@ -78,7 +78,7 @@ hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
 include(ProjectJsonRpcCpp)
-include(ProjectSecp256k1)
+#include(ProjectSecp256k1)
 include(ProjectLibFF)
 
 find_package(Threads)
