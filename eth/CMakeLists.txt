@@ -22,13 +22,13 @@ add_executable(eth ${sources})
 target_link_libraries(
     eth 
     PUBLIC intl
-    PUBLIC ${CMAKE_SOURCE_DIR}/libraries/python/libpython3.6m.a
+    PUBLIC ${ETHEREUM_DIR}/../libraries/python/libpython3.6m.a
     PUBLIC ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ${OPENSSL_LIBRARIES}
     PRIVATE ethereum ethashseal evm web3jsonrpc webthree devcore Boost::program_options
 )
 
 target_include_directories(eth PRIVATE ../utils
-                                 PUBLIC ${CMAKE_SOURCE_DIR}/libraries/python/dist/include/python3.6m
+                                 PUBLIC ${ETHEREUM_DIR}/../libraries/python/dist/include/python3.6m
 )
 
 if(MINIUPNPC)
