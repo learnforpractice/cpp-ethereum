@@ -33,6 +33,7 @@ struct EVMSchedule
 	bool haveDelegateCall = true;
 	bool eip150Mode = false;
 	bool eip158Mode = false;
+	bool haveBitwiseShifting = false;
 	bool haveRevert = false;
 	bool haveReturnData = false;
 	bool haveStaticCall = false;
@@ -116,11 +117,21 @@ static const EVMSchedule ByzantiumSchedule = []
 	return schedule;
 }();
 
+static const EVMSchedule EWASMSchedule = []
+{
+    EVMSchedule schedule = ByzantiumSchedule;
+    schedule.maxCodeSize = std::numeric_limits<unsigned>::max();
+    // Ensure that zero bytes are not subsidised and are charged the same as non-zero bytes.
+    schedule.txDataZeroGas = schedule.txDataNonZeroGas;
+    return schedule;
+}();
+
 static const EVMSchedule ConstantinopleSchedule = []
 {
 	EVMSchedule schedule = ByzantiumSchedule;
 	schedule.blockhashGas = 800;
 	schedule.haveCreate2 = true;
+	schedule.haveBitwiseShifting = true;
 	return schedule;
 }();
 

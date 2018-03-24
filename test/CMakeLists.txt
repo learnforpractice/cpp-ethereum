@@ -1,7 +1,7 @@
 file(GLOB_RECURSE sources "*.cpp" "*.h" "*.sol")
 
 # search for test names and create ctest tests
-set(excludeSuites jsonrpc \"RandomTestCreationSuite\" shhrpc whisperDB whisperMessage whisper BlockQueueSuite)
+set(excludeSuites jsonrpc \"customTestSuite\" BlockQueueSuite)
 set(allSuites jsonrpc)
 foreach(file ${sources})
 	file(STRINGS ${file} test_list_raw REGEX "BOOST_.*TEST_(SUITE|CASE|SUITE_END)")
@@ -50,9 +50,12 @@ foreach(file ${sources})
 	endforeach(test_raw)
 endforeach(file)
 
+hunter_add_package(yaml-cpp)
+find_package(yaml-cpp CONFIG REQUIRED)
+
 add_executable(testeth ${sources})
-target_include_directories(testeth PRIVATE ../utils)
-target_link_libraries(testeth PRIVATE ethereum ethashseal web3jsonrpc devcrypto devcore cryptopp-static)
+target_include_directories(testeth PRIVATE ${UTILS_INCLUDE_DIR})
+target_link_libraries(testeth PRIVATE ethereum ethashseal web3jsonrpc devcrypto devcore cryptopp-static yaml-cpp::yaml-cpp binaryen::binaryen)
 
 enable_testing()
 set(CTEST_OUTPUT_ON_FAILURE TRUE)

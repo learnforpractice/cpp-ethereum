@@ -13,19 +13,26 @@ set(
     MinerAux.h
 )
 
-find_package(openssl REQUIRED)
+hunter_add_package(OpenSSL)
+find_package(OpenSSL "1.0.2" REQUIRED)
+
+message("++++++++eth+++++++++++++${OPENSSL_CRYPTO_LIBRARY}")
 
 add_executable(eth ${sources})
 target_link_libraries(
     eth 
     PUBLIC intl
     PUBLIC ${CMAKE_SOURCE_DIR}/libraries/python/libpython3.6m.a
-    PUBLIC ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY}
-    PRIVATE ethereum ethashseal evm web3jsonrpc webthree devcore 
+    PUBLIC ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY} ${OPENSSL_LIBRARIES}
+    PRIVATE ethereum ethashseal evm web3jsonrpc webthree devcore Boost::program_options
 )
 
 target_include_directories(eth PRIVATE ../utils
                                  PUBLIC ${CMAKE_SOURCE_DIR}/libraries/python/dist/include/python3.6m
 )
+
+if(MINIUPNPC)
+    target_compile_definitions(eth PRIVATE ETH_MINIUPNPC)
+endif()
 
 install(TARGETS eth DESTINATION bin)

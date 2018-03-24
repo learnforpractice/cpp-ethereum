@@ -70,7 +70,7 @@ inline std::string credits()
 	std::ostringstream out;
 	out
 		<< "cpp-ethereum " << dev::Version << endl
-		<< "  By cpp-ethereum contributors, (c) 2013-2016." << endl
+		<< "  By cpp-ethereum contributors, (c) 2013-2018." << endl
 		<< "  See the README for contributors and credits." << endl;
 	return out.str();
 }
@@ -95,14 +95,16 @@ public:
 	};
 
 
-	MinerCLI(OperationMode _mode = OperationMode::None): mode(_mode) {
+	explicit MinerCLI(OperationMode _mode = OperationMode::None): mode(_mode)
+	{
 		Ethash::init();
 		NoProof::init();
 		BasicAuthority::init();
 	}
 
-	bool interpretOption(int& i, int argc, char** argv)
+	bool interpretOption(size_t& i, vector<string> const& argv)
 	{
+		size_t argc = argv.size();
 		string arg = argv[i];
 		if (arg == "--benchmark-warmup" && i + 1 < argc)
 			try {
@@ -252,7 +254,7 @@ private:
 		exit(0);
 	}
 
-	void doBenchmark(std::string _m, unsigned _warmupDuration = 15, unsigned _trialDuration = 3, unsigned _trials = 5)
+	void doBenchmark(std::string const& _m, unsigned _warmupDuration = 15, unsigned _trialDuration = 3, unsigned _trials = 5)
 	{
 		BlockHeader genesis;
 		genesis.setDifficulty(1 << 18);

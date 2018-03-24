@@ -31,6 +31,8 @@ if (NOT DEFINED CMAKE_TOOLCHAIN_FILE)
     set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/toolchain.cmake)
 endif()
 
+set(ETHEREUM_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+
 set(ETH_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE PATH "The path to the cmake directory")
 list(APPEND CMAKE_MODULE_PATH ${ETH_CMAKE_DIR})
 
@@ -65,8 +67,10 @@ include(EthExecutableHelper)
 include(EthDependencies)
 include(EthUtils)
 
-#hunter_add_package(Boost COMPONENTS filesystem system thread)
-find_package(Boost REQUIRED COMPONENTS filesystem system thread)
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+hunter_add_package(Boost COMPONENTS program_options filesystem system thread context fiber)
+find_package(Boost CONFIG REQUIRED program_options filesystem system thread context fiber)
 
 hunter_add_package(jsoncpp)
 find_package(jsoncpp CONFIG REQUIRED)
@@ -77,9 +81,18 @@ find_package(Snappy CONFIG REQUIRED)
 hunter_add_package(cryptopp)
 find_package(cryptopp CONFIG REQUIRED)
 
-include(ProjectJsonRpcCpp)
-#include(ProjectSecp256k1)
+
+hunter_add_package(libjson-rpc-cpp)
+find_package(libjson-rpc-cpp CONFIG REQUIRED)
+
+hunter_add_package(libscrypt)
+find_package(libscrypt CONFIG REQUIRED)
+
+include(ProjectSecp256k1)
 include(ProjectLibFF)
+
+# Import binaryen library before hera to make it available also to testeth.
+#include(hera/cmake/ProjectBinaryen.cmake)
 
 find_package(Threads)
 
@@ -87,9 +100,18 @@ if(MINIUPNPC)
     find_package(Miniupnpc 1.8.2013 REQUIRED)
 endif()
 
+set(UTILS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/utils")
+
 configure_project()
 
-add_subdirectory(utils)
+if (HERA)
+    add_subdirectory(hera)
+endif()
+
+#Global include path for all libs.
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
+
+
 add_subdirectory(libdevcore)
 add_subdirectory(libdevcrypto)
 add_subdirectory(libp2p)
@@ -101,7 +123,6 @@ add_subdirectory(libevm)
 add_subdirectory(libethereum)
 add_subdirectory(libethashseal)
 
-add_subdirectory(libwhisper)
 add_subdirectory(libwebthree)
 add_subdirectory(libweb3jsonrpc)
 
@@ -109,7 +130,9 @@ if (EVMJIT)
     add_subdirectory(evmjit)
 endif()
 
-add_subdirectory(eth)
+#add_subdirectory(eth)
+
+add_subdirectory(utils)
 
 if (TOOLS)
     add_subdirectory(ethkey)
@@ -122,4 +145,3 @@ if (TESTS)
 #    add_subdirectory(test)
 endif()
 
-# TODO: Split out json_spirit, libscrypt and sec256k1.

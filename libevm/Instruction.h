@@ -50,8 +50,11 @@ enum class Instruction: uint8_t
 	AND,                ///< bitwise AND operation
 	OR,                 ///< bitwise OR operation
 	XOR,                ///< bitwise XOR operation
-	NOT,                ///< bitwise NOT opertation
+	NOT,                ///< bitwise NOT operation
 	BYTE,               ///< retrieve single byte from word
+	SHL,                ///< logical shift left operation
+	SHR,                ///< logical shift right operation
+	SAR,                ///< arithmetic shift right operation
 
 	SHA3 = 0x20,        ///< compute SHA3-256 hash
 
@@ -247,6 +250,13 @@ struct InstructionInfo
 	int args;           ///< Number of items required on the stack for this instruction (and, for the purposes of ret, the number taken from the stack).
 	int ret;            ///< Number of items placed (back) on the stack by this instruction, assuming args items were removed.
 	Tier gasPriceTier;   ///< Tier for gas pricing.
+};
+
+struct InstructionMetric
+{
+	Tier gasPriceTier;
+	int args;
+	int ret;
 };
 
 /// Information on all the instructions.

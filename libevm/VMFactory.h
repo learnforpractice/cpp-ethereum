@@ -17,23 +17,35 @@
 #pragma once
 
 #include "VMFace.h"
+#include <boost/program_options/options_description.hpp>
 
 namespace dev
 {
 namespace eth
 {
-
 enum class VMKind
 {
-	Interpreter,
-	JIT,
-	Smart
+    Interpreter,
+    JIT,
+    Hera,
+    Legacy,
 };
+
+/// Returns the EVM-C options parsed from command line.
+std::vector<std::pair<std::string, std::string>>& evmcOptions() noexcept;
+
+/// Provide a set of program options related to VMs.
+///
+/// @param _lineLength  The line length for description text wrapping, the same as in
+///                     boost::program_options::options_description::options_description().
+boost::program_options::options_description vmProgramOptions(
+    unsigned _lineLength = boost::program_options::options_description::m_default_line_length);
 
 class VMFactory
 {
 public:
 	VMFactory() = delete;
+	~VMFactory() = delete;
 
 	/// Creates a VM instance of global kind (controlled by setKind() function).
 	static std::unique_ptr<VMFace> create();

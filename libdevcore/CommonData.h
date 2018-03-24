@@ -43,7 +43,7 @@ enum class WhenError
 };
 
 template <class Iterator>
-std::string toHex(Iterator _it, Iterator _end, std::string _prefix)
+std::string toHex(Iterator _it, Iterator _end, std::string const& _prefix)
 {
 	typedef std::iterator_traits<Iterator> traits;
 	static_assert(sizeof(typename traits::value_type) == 1, "toHex needs byte-sized element type");
@@ -207,9 +207,6 @@ unsigned commonPrefix(T const& _t, _U const& _u)
 			return i;
 	return s;
 }
-
-/// Creates a random, printable, word.
-std::string randomWord();
 
 /// Determine bytes required to encode the given integer value. @returns 0 if @a _i is zero.
 template <class T>

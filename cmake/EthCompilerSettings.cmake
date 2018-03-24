@@ -37,9 +37,9 @@ if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MA
 
 	# Configuration-specific compiler settings.
 	set(CMAKE_CXX_FLAGS_DEBUG          "-Og -g -DETH_DEBUG")
-	set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG -DETH_RELEASE")
-	set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG -DETH_RELEASE")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DETH_RELEASE")
+	set(CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
+	set(CMAKE_CXX_FLAGS_RELEASE        "-O3 -DNDEBUG")
+	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
 
 	option(USE_LD_GOLD "Use GNU gold linker" ON)
 	if (USE_LD_GOLD)
@@ -112,23 +112,9 @@ if (SANITIZE)
 	endif()
 endif()
 
-if (PROFILING AND (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")))
-	set(CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_C_FLAGS "-g ${CMAKE_C_FLAGS}")
-	add_definitions(-DETH_PROFILING_GPERF)
-	set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lprofiler")
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lprofiler")
-endif ()
-
-if (COVERAGE)
-	include(ProjectLcov)
-	set(CMAKE_CXX_FLAGS "-g --coverage ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_C_FLAGS "-g --coverage ${CMAKE_C_FLAGS}")
+option(COVERAGE "Build with code coverage support" OFF)
+if(COVERAGE)
+	add_compile_options(-g --coverage)
 	set(CMAKE_SHARED_LINKER_FLAGS "--coverage ${CMAKE_SHARED_LINKER_FLAGS}")
 	set(CMAKE_EXE_LINKER_FLAGS "--coverage ${CMAKE_EXE_LINKER_FLAGS}")
-	add_custom_target(coverage.data
-		COMMAND ${LCOV_TOOL} -o ${CMAKE_BINARY_DIR}/coverage.data -c -d ${CMAKE_BINARY_DIR}
-		COMMAND ${LCOV_TOOL} -o ${CMAKE_BINARY_DIR}/coverage.data -r ${CMAKE_BINARY_DIR}/coverage.data '/usr*' '${CMAKE_SOURCE_DIR}/deps/*'
-	)
-	add_dependencies(coverage.data lcov)
-endif ()
+endif()

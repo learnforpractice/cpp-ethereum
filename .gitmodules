@@ -2,3 +2,6 @@
 	path = evmjit
 	url = https://github.com/ethereum/evmjit
 	branch = develop
+[submodule "hera"]
+	path = hera
+	url = https://github.com/ewasm/hera

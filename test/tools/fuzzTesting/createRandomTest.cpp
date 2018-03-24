@@ -45,8 +45,10 @@ bool createRandomTest()
 	}
 	else
 	{
-		RandomCodeOptions options;
-		std::string test = test::RandomCode::get().fillRandomTest(suite, c_testExampleStateTest, options);
+		RandomCodeOptions codeOptions;
+		if (options.randomCodeOptionsPath.is_initialized())
+			codeOptions.loadFromFile(options.randomCodeOptionsPath.get());
+		std::string test = test::RandomCode::get().fillRandomTest(suite, c_testExampleStateTest, codeOptions);
 		std::cout << test << "\n";
 		return test.empty() ? false : true;
 	}
@@ -220,6 +222,21 @@ std::string const c_testExampleStateTest = R"(
 		"currentTimestamp" : "1000",
 		"previousHash" : "[HASH32]"
 		},
+	"expect" : [
+		{
+			"indexes" : {
+				"data" : -1,
+				"gas" : -1,
+				"value" : -1
+			},
+			"network" : [">=Frontier"],
+			"result" : {
+				"a94f5374fce5edbc8e2a8697c15331677e6ebf0b" : {
+						"nonce" : "1"
+					}
+			}
+		}
+	],
 	"pre" : {
 		"ffffffffffffffffffffffffffffffffffffffff" : {
 			"balance" : "[HEX]",

@@ -46,11 +46,11 @@ matrix:
           env:
               - ZIP_SUFFIX=ubuntu-trusty
 
-        - os: osx
-          osx_image: xcode9
-          env:
-              - TRAVIS_TESTS=Off
-              - ZIP_SUFFIX=macos-sierra
+#        - os: osx
+#          osx_image: xcode9
+#          env:
+#              - TRAVIS_TESTS=Off
+#              - ZIP_SUFFIX=macos-sierra
 git:
     depth: 2
 cache:
@@ -65,6 +65,8 @@ cache:
 install: |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
       ./scripts/install_cmake.sh && ./scripts/install_solc_lllc.sh;
+      pyenv local 3.6
+      pip install --user requests
     fi
     export HOMEBREW_NO_AUTO_UPDATE=1
     ./scripts/install_deps.sh
@@ -75,17 +77,8 @@ before_script:
 script:
     - cd $TRAVIS_BUILD_DIR/build && ../scripts/tests.sh $TRAVIS_TESTS
 after_success:
-    - cd $TRAVIS_BUILD_DIR/build
-    - make coverage.data
-    # Get CodeCov script (fixed commit) and upload coverage report.
-    - bash <(curl -s https://raw.githubusercontent.com/codecov/codecov-bash/d8016a07d67d813f98afdbaf98dc4f46d9806118/codecov) -X fix -f coverage.data
-after_script: |
-    # Hunter: upload cache to the cache server.
-    if [[ "$TRAVIS_EVENT_TYPE" != "pull_request" ]]; then
-      if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo pip install --upgrade requests pyopenssl; fi
-      if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pip install requests; fi
-      make -C $TRAVIS_BUILD_DIR/build hunter_upload_cache
-    fi
+    - pip install --user codecov
+    - codecov
 deploy:
     # This is the deploy target for the native build (Linux and macOS)
     # which generates ZIPs per commit.  We are in agreement that

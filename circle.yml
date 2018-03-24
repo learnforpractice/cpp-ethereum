@@ -6,14 +6,6 @@ defaults:
       command: |
         git submodule update --init
 
-  upload-hunter-cache: &upload-hunter-cache
-    run:
-      name: "Upload Hunter cache"
-      command: |  # Upload Hunter cache if not PR build.
-        if [ ! "$CIRCLE_PR_NUMBER" ]; then
-          cmake --build build --target hunter_upload_cache
-        fi
-
   environment-info: &environment-info
     run:
       name: "Environment info"
@@ -25,19 +17,22 @@ defaults:
   configure: &configure
     run:
       name: "Configure"
+      # Build "out-of-source" to have better coverage report
+      # (ninja is using relative paths otherwise).
+      working_directory: ~/build
       command: |
-        mkdir -p build && cd build
-        cmake .. -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCOVERAGE=ON $CMAKE_OPTIONS
+        cmake ../project -G "$GENERATOR" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCOVERAGE=ON $CMAKE_OPTIONS
 
   build: &build
     run:
       name: "Build"
-      command: cmake --build build -- -j $BUILD_PARALLEL_JOBS
+      working_directory: ~/build
+      command: cmake --build . -- -j $BUILD_PARALLEL_JOBS
 
   test: &test
     run:
       name: "Test"
-      pwd: build
+      working_directory: ~/build
       command: |
         if [ $(uname) = Linux ]; then
           export TMPDIR=/dev/shm
@@ -54,13 +49,26 @@ defaults:
 
   store-eth: &store-eth
     store_artifacts:
-      path: build/eth/eth
+      path: ~/build/eth/eth
       destination: eth
+    store_artifacts:
+      path: ~/build/test/testeth
+      destination: testeth
+
+  store-testeth: &store-testeth
+    store_artifacts:
+      path: ~/build/test/testeth
+      destination: testeth
+
+  store-randomcode-seed: &store-randomcode-seed
+    store_artifacts:
+      path: ~/build/test/randomCodeSeed.txt
+      destination: randomCodeSeed.txt
 
   save-deps-cache: &save-deps-cache
     cache-save:
       name: "Save dependencies cache"
-      key: &deps-cache-key deps-2-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectJsonRpcCpp.cmake"}}
+      key: &deps-cache-key deps-2-{{arch}}-{{checksum "compiler.version"}}-{{checksum "cmake/ProjectLibFF.cmake"}}
       paths:
         - build/deps
 
@@ -84,8 +92,10 @@ defaults:
   upload-coverage-data: &upload-coverage-data
     run:
       name: "Upload coverage data"
-      pwd: build
-      command: codecov
+      command: |
+        pwd
+        $GCOV --version
+        codecov --required --gcov-exec "$GCOV" --gcov-root ~/build
 
   linux-steps: &linux-steps
     - checkout
@@ -93,12 +103,18 @@ defaults:
     - *environment-info
     - *restore-deps-cache
     - *configure
-    - *upload-hunter-cache
     - *build
     - *save-deps-cache
     - *store-eth
+    - *store-testeth
     - *restore-ethash-dag
     - *test
+    - run:
+        name: "Test EVM-C Interpreter"
+        working_directory: ~/build
+        command: |
+          ETHEREUM_TEST_PATH=~/project/test/jsontests \
+          test/testeth -t GeneralStateTests -- --vm interpreter
     - *save-ethash-dag
     - *upload-coverage-data
 
@@ -110,6 +126,7 @@ jobs:
     environment:
       - CXX: clang++-5.0
       - CC:  clang-5.0
+      - GCOV: llvm-cov-5.0 gcov
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 8
       - TEST_PARALLEL_JOBS: 8
@@ -122,6 +139,7 @@ jobs:
       - BUILD_TYPE: Debug
       - CXX: g++-6
       - CC:  gcc-6
+      - GCOV: gcov-6
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 4
       - TEST_PARALLEL_JOBS: 4
@@ -135,6 +153,7 @@ jobs:
   macOS-XCode9:
     environment:
       - CXX: clang++
+      - GCOV: gcov
       - GENERATOR: Ninja
       - BUILD_PARALLEL_JOBS: 8
       - TEST_PARALLEL_JOBS: 8
@@ -146,18 +165,19 @@ jobs:
       - *environment-info
       - run:
           name: "Install macOS dependencies"
+          # Python3 and requests are needed for Hunter upload.
           command: |
-            pip install -q requests codecov &
-            HOMEBREW_NO_AUTO_UPDATE=1 brew install -q cmake ninja leveldb libmicrohttpd &
-            wait
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install -q cmake ninja python3 leveldb
+            pip3 install -q requests codecov
       - *restore-deps-cache
       - *configure
-      - *upload-hunter-cache
       - *build
       - *save-deps-cache
       - *store-eth
+      - *store-testeth
       - *restore-ethash-dag
       - *test
+      - *store-randomcode-seed
       - *save-ethash-dag
       - *upload-coverage-data
 
