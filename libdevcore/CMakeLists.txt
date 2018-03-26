@@ -10,7 +10,7 @@ add_dependencies(devcore BuildInfo.h)
 include_directories (${CMAKE_SOURCE_DIR}/libraries/ethereum)
 
 # Needed to prevent including system-level boost headers:
-target_include_directories(devcore SYSTEM PUBLIC ${Boost_INCLUDE_DIR} PRIVATE ../utils)
+target_include_directories(devcore SYSTEM PUBLIC ${Boost_INCLUDE_DIRS} PRIVATE ../utils)
 
 target_link_libraries(devcore ${Boost_LIBRARIES} Threads::Threads)
 

@@ -14,7 +14,7 @@ set(
 )
 
 hunter_add_package(OpenSSL)
-find_package(OpenSSL "1.0.2" REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 message("++++++++eth+++++++++++++${OPENSSL_CRYPTO_LIBRARY}")
 
