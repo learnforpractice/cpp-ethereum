@@ -47,8 +47,8 @@ if(CMAKE_CONFIGURATION_TYPES)
 endif()
 
 # Map current configuration to configurations of imported targets.
-set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
-set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
+#set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
+#set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
 
 
 # project name and version should be set after cmake_policy CMP0048
