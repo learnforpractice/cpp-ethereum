@@ -88,8 +88,9 @@ find_package(libjson-rpc-cpp CONFIG REQUIRED)
 hunter_add_package(libscrypt)
 find_package(libscrypt CONFIG REQUIRED)
 
-include(ProjectSecp256k1)
-include(ProjectLibFF)
+#replace by self build in utils/secp256k1
+#include(ProjectSecp256k1)
+#include(ProjectLibFF)
 
 # Import binaryen library before hera to make it available also to testeth.
 #include(hera/cmake/ProjectBinaryen.cmake)
