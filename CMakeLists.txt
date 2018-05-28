@@ -32,36 +32,6 @@ include(GNUInstallDirs)
 
 cable_configure_toolchain(DEFAULT cxx11)
 
-set(ETH_CMAKE_DIR "${CMAKE_CURRENT_LIST_DIR}/cmake" CACHE PATH "The path to the cmake directory")
-list(APPEND CMAKE_MODULE_PATH ${ETH_CMAKE_DIR})
-
-set(CPP_ETHEREUM_DIR "${CMAKE_CURRENT_LIST_DIR}" CACHE PATH "Path to the root directory for cpp-ethereum")
-
-# Map current configuration to configurations of imported targets.
-set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
-set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release)
-
-set(HUNTER_CONFIGURATION_TYPES Release)
-set(HUNTER_JOBS_NUMBER 4)
-set(HUNTER_CACHE_SERVERS "https://github.com/ethereum/hunter-cache")
-set(HUNTER_PASSWORDS_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/Hunter/passwords.cmake)
-
-# In CI builds upload the binaries if the GITHUB_USER_PASSWORD was decrypted
-# (only for branches and internal PRs).
-if("$ENV{CI}" AND NOT "$ENV{GITHUB_USER_PASSWORD}" STREQUAL "")
-    set(run_upload YES)
-else()
-    set(run_upload NO)
-endif()
-option(HUNTER_RUN_UPLOAD "Upload binaries to the cache server" ${run_upload})
-
-include(HunterGate)
-HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.21.16.tar.gz"
-    SHA1 "aa1faccd24f33dd2c368f85a4e9ca2e5d9c249cb"
-    LOCAL
-)
-
 project(cpp-ethereum)
 set(PROJECT_VERSION 1.4.0.dev0)
 
