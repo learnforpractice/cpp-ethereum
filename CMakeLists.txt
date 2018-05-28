@@ -35,7 +35,7 @@ cable_configure_toolchain(DEFAULT cxx11)
 project(cpp-ethereum)
 set(PROJECT_VERSION 1.4.0.dev0)
 
-if (NOT EXISTS ${CMAKE_SOURCE_DIR}/evmjit/.git)
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/evmjit/.git)
     message(FATAL_ERROR "Git submodules not initialized, execute:\n  git submodule update --init")
 endif()
 
@@ -76,10 +76,10 @@ hunter_add_package(ethash)
 find_package(ethash CONFIG REQUIRED)
 
 include(ProjectSecp256k1)
-include(ProjectLibFF)
+#include(ProjectLibFF)
 
 # Import binaryen library before hera to make it available also to testeth.
-include(hera/cmake/ProjectBinaryen.cmake)
+#include(hera/cmake/ProjectBinaryen.cmake)
 
 find_package(Threads)
 
@@ -87,7 +87,7 @@ if(MINIUPNPC)
     find_package(Miniupnpc 1.8.2013 REQUIRED)
 endif()
 
-set(UTILS_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/utils")
+set(UTILS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/utils")
 
 configure_project()
 
@@ -98,7 +98,7 @@ if (HERA)
 endif()
 
 #Global include path for all libs.
-include_directories("${CMAKE_SOURCE_DIR}")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(libdevcore)
 add_subdirectory(libdevcrypto)
