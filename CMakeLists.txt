@@ -150,6 +150,8 @@ endif()
 
 add_subdirectory(eth)
 
+add_subdirectory(utils)
+
 if (TOOLS)
     add_subdirectory(ethkey)
     add_subdirectory(ethvm)
