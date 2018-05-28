@@ -22,7 +22,6 @@
 #pragma once
 
 #include <libdevcore/Common.h>
-#include <libdevcore/JsonUtils.h>
 #include <libdevcore/RLP.h>
 #include <libdevcore/TrieDB.h>
 #include <libdevcore/SHA3.h>
@@ -249,7 +248,8 @@ using AccountMaskMap = std::unordered_map<Address, AccountMask>;
 class PrecompiledContract;
 using PrecompiledContractMap = std::unordered_map<Address, PrecompiledContract>;
 
-AccountMap jsonToAccountMap(std::string const& _json, u256 const& _defaultNonce = 0, AccountMaskMap* o_mask = nullptr, PrecompiledContractMap* o_precompiled = nullptr);
-
+AccountMap jsonToAccountMap(std::string const& _json, u256 const& _defaultNonce = 0,
+    AccountMaskMap* o_mask = nullptr, PrecompiledContractMap* o_precompiled = nullptr,
+    const boost::filesystem::path& _configPath = {});
 }
 }

@@ -22,16 +22,17 @@
  * CLI module for key management.
  */
 
-#include <thread>
+#include <libdevcore/CommonIO.h>
+#include <libdevcore/FileSystem.h>
+#include <libdevcore/SHA3.h>
+#include <libethcore/KeyManager.h>
+#include <libethcore/TransactionBase.h>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/trim_all.hpp>
 #include <chrono>
 #include <fstream>
 #include <iosfwd>
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/trim_all.hpp>
-#include <libdevcore/SHA3.h>
-#include <libdevcore/FileSystem.h>
-#include <libethcore/KeyManager.h>
-#include <libethcore/TransactionBase.h>
+#include <thread>
 
 using namespace std;
 using namespace dev;
@@ -105,10 +106,11 @@ public:
 		DecodeTx,
 	};
 
-	KeyCLI(OperationMode _mode = OperationMode::None): m_mode(_mode) {}
+    KeyCLI(OperationMode _mode = OperationMode::None) : m_mode(_mode) { m_toSign.creation = true; }
 
-	bool interpretOption(int& i, int argc, char** argv)
+    bool interpretOption(size_t& i, vector<string> const& argv)
 	{
+		size_t argc = argv.size();
 		string arg = argv[i];
 		if (arg == "--wallet-path" && i + 1 < argc)
 			m_walletPath = argv[++i];
@@ -284,12 +286,6 @@ public:
 		{
 			if (h128 u = fromUUID(_signKey))
 				return Secret(secretStore().secret(u, [&](){ return getPassword("Enter passphrase for key: "); }));
-			if (_signKey.substr(0, 6) == "brain#" && _signKey.find(":") != string::npos)
-				return KeyManager::subkey(KeyManager::brain(_signKey.substr(_signKey.find(":"))), stoul(_signKey.substr(6, _signKey.find(":") - 7)));
-			if (_signKey.substr(0, 6) == "brain:")
-				return KeyManager::brain(_signKey.substr(6));
-			if (_signKey == "brain")
-				return KeyManager::brain(getPassword("Enter brain wallet phrase: "));
 			Address a;
 			try
 			{
@@ -409,8 +405,6 @@ public:
 		case OperationMode::Inspect:
 		{
 			keyManager(true);
-			if (m_inputs.empty())
-				m_inputs.push_back(toAddress(KeyManager::brain(getPassword("Enter brain wallet key phrase: "))).hex());
 			for (auto i: m_inputs)
 			{
 				Address a = userToAddress(i);
@@ -658,13 +652,6 @@ public:
 				}
 				else
 					bare.push_back(u);
-			for (auto const& a: keyManager().accounts())
-				if (!got.count(a))
-				{
-					cout << "               (Brain)               " << a.abridged();
-					cout << " " << a << " ";
-					cout << " " << keyManager().accountName(a) << endl;
-				}
 			for (auto const& u: bare)
 				cout << toUUID(u) << " (Bare)" << endl;
 			break;
@@ -700,22 +687,16 @@ public:
 			<< "    importpresale <file> <name>  Import a presale wallet into a key with the given name." << endl
 			<< "    importwithaddress [<uuid>|<file>|<secret-hex>] <address> <name>  Import keys from given source with given address and place in wallet." << endl
 			<< "    export [ <address>|<uuid> , ... ]  Export given keys." << endl
-			<< "    inspect [ <address>|<name>|<uuid>|<brainwallet> ] ...  Print information on the given keys." << endl
+			<< "    inspect [ <address>|<name>|<uuid> ] ...  Print information on the given keys." << endl
 //			<< "    recode [ <address>|<uuid>|<file> , ... ]  Decrypt and re-encrypt given keys." << endl
 			<< "    kill [ <address>|<uuid>, ... ]  Delete given keys." << endl
-			<< "Brain wallet operating modes:" << endl
-			<< "WARNING: Brain wallets with human-generated passphrasses are highly susceptible to attack. Don't use such a thing for" << endl
-			<< "anything important." << endl
-			<< "    newbrain [ <name>|-- ]  Create a new 13-word brain wallet; argument is the name or if --, do not add to wallet." << endl
-			<< "    importbrain <name>  Import your own brain wallet." << endl
-			<< "Brainwallets are specified as: brain((#<HD-index>):<brain-phrase>), e.g. brain:PASSWORD." << endl
 			<< "Wallet configuration:" << endl
 			<< "    --wallet-path <path>  Specify Ethereum wallet path (default: " << KeyManager::defaultPath() << ")" << endl
 			<< "    -m, --master <passphrase>  Specify wallet (master) passphrase." << endl
 			<< endl
 			<< "Transaction operating modes:" << endl
 			<< "    decode ( [ <hex>|<file> ] )  Decode given transaction." << endl
-			<< "    sign [ <address>|<uuid>|<file>|<brainwallet> ] ( [ <hex>|<file> , ... ] )  (Re-)Sign given transaction." << endl
+			<< "    sign [ <address>|<uuid>|<file> ] ( [ <hex>|<file> , ... ] )  (Re-)Sign given transaction." << endl
 			<< "Transaction specification options (to be used when no transaction hex or file is given):" << endl
 			<< "    --tx-dest <address>  Specify the destination address for the transaction to be signed." << endl
 			<< "    --tx-data <hex>  Specify the hex data for the transaction to be signed." << endl

@@ -24,7 +24,6 @@ R"E(
 		"accountStartNonce": "0x00",
 		"maximumExtraDataSize": "0x20",
 		"homesteadForkBlock": "0x00",
-		"daoHardforkBlock": "0xfffffffffffffff",
 		"EIP150ForkBlock": "0x00",
 		"EIP158ForkBlock": "0x00",
 		"byzantiumForkBlock": "0x00",
@@ -43,7 +42,7 @@ R"E(
 	},
 	"genesis": {
 		"nonce": "0x0000000000000042",
-		"difficulty": "0x400000000",
+		"difficulty": "0x020000",
 		"mixHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
 		"author": "0x0000000000000000000000000000000000000000",
 		"timestamp": "0x00",

@@ -70,6 +70,7 @@ string const c_daoHardforkBlock = "daoHardforkBlock";
 string const c_EIP150ForkBlock = "EIP150ForkBlock";
 string const c_EIP158ForkBlock = "EIP158ForkBlock";
 string const c_byzantiumForkBlock = "byzantiumForkBlock";
+string const c_eWASMForkBlock = "eWASMForkBlock";
 string const c_constantinopleForkBlock = "constantinopleForkBlock";
 string const c_accountStartNonce = "accountStartNonce";
 string const c_maximumExtraDataSize = "maximumExtraDataSize";
@@ -81,18 +82,16 @@ string const c_durationLimit = "durationLimit";
 string const c_chainID = "chainID";
 string const c_networkID = "networkID";
 string const c_allowFutureBlocks = "allowFutureBlocks";
-string const c_registrar = "registrar";
 
-set<string> const c_knownParamNames = {
-	c_minGasLimit, c_maxGasLimit, c_gasLimitBoundDivisor, c_homesteadForkBlock,
-	c_EIP150ForkBlock, c_EIP158ForkBlock, c_accountStartNonce, c_maximumExtraDataSize,
-	c_tieBreakingGas, c_blockReward, c_byzantiumForkBlock, c_constantinopleForkBlock,
-	c_daoHardforkBlock, c_minimumDifficulty, c_difficultyBoundDivisor, c_durationLimit,
-	c_chainID, c_networkID, c_allowFutureBlocks, c_registrar
-};
+set<string> const c_knownParamNames = {c_minGasLimit, c_maxGasLimit, c_gasLimitBoundDivisor,
+    c_homesteadForkBlock, c_EIP150ForkBlock, c_EIP158ForkBlock, c_accountStartNonce,
+    c_maximumExtraDataSize, c_tieBreakingGas, c_blockReward, c_byzantiumForkBlock, c_eWASMForkBlock,
+    c_constantinopleForkBlock, c_daoHardforkBlock, c_minimumDifficulty, c_difficultyBoundDivisor,
+    c_durationLimit, c_chainID, c_networkID, c_allowFutureBlocks};
 } // anonymous namespace
 
-ChainParams ChainParams::loadConfig(string const& _json, h256 const& _stateRoot) const
+ChainParams ChainParams::loadConfig(
+    string const& _json, h256 const& _stateRoot, const boost::filesystem::path& _configPath) const
 {
 	ChainParams cp(*this);
 	js::mValue val;
@@ -122,12 +121,12 @@ ChainParams ChainParams::loadConfig(string const& _json, h256 const& _stateRoot)
 	setOptionalU256Parameter(cp.EIP150ForkBlock, c_EIP150ForkBlock);
 	setOptionalU256Parameter(cp.EIP158ForkBlock, c_EIP158ForkBlock);
 	setOptionalU256Parameter(cp.byzantiumForkBlock, c_byzantiumForkBlock);
+	setOptionalU256Parameter(cp.eWASMForkBlock, c_eWASMForkBlock);
 	setOptionalU256Parameter(cp.constantinopleForkBlock, c_constantinopleForkBlock);
 	setOptionalU256Parameter(cp.daoHardforkBlock, c_daoHardforkBlock);
 	setOptionalU256Parameter(cp.minimumDifficulty, c_minimumDifficulty);
 	setOptionalU256Parameter(cp.difficultyBoundDivisor, c_difficultyBoundDivisor);
 	setOptionalU256Parameter(cp.durationLimit, c_durationLimit);
-	setOptionalU256Parameter(cp.registrar, c_registrar);
 
 	if (params.count(c_chainID))
 		cp.chainID = int(u256(fromBigEndian<u256>(fromHex(params.at(c_chainID).get_str()))));
@@ -140,16 +139,12 @@ ChainParams ChainParams::loadConfig(string const& _json, h256 const& _stateRoot)
 	cp = cp.loadGenesis(genesisStr, _stateRoot);
 	// genesis state
 	string genesisStateStr = json_spirit::write_string(obj[c_accounts], false);
-	cp = cp.loadGenesisState(genesisStateStr, _stateRoot);
-	return cp;
-}
 
-ChainParams ChainParams::loadGenesisState(string const& _json, h256 const& _stateRoot) const
-{
-	ChainParams cp(*this);
-	cp.genesisState = jsonToAccountMap(_json, cp.accountStartNonce, nullptr, &cp.precompiled);
-	cp.stateRoot = _stateRoot ? _stateRoot : cp.calculateStateRoot(true);
-	return cp;
+    cp.genesisState = jsonToAccountMap(
+        genesisStateStr, cp.accountStartNonce, nullptr, &cp.precompiled, _configPath);
+    cp.stateRoot = _stateRoot ? _stateRoot : cp.calculateStateRoot(true);
+
+    return cp;
 }
 
 namespace

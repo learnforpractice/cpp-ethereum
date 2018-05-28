@@ -18,6 +18,7 @@
  * @date 2017
  */
 
+#pragma once
 #include <string>
 #include <random>
 #include <boost/filesystem/path.hpp>
@@ -27,8 +28,6 @@
 #include <libdevcore/CommonData.h>
 #include <libevm/Instruction.h>
 #include <test/tools/libtesteth/TestSuite.h>
-
-#pragma once
 
 namespace dev
 {
@@ -56,6 +55,7 @@ public:
 	RandomCodeOptions();
 	void setWeight(dev::eth::Instruction _opCode, int _weight);
 	void addAddress(dev::Address const& _address, AddressType _type);
+	void loadFromFile(boost::filesystem::path const& _file);
 	dev::Address getRandomAddress(AddressType _type = AddressType::All) const;
 	int getWeightedRandomOpcode() const;
 
@@ -103,15 +103,15 @@ public:
 	std::string rndRLPSequence(int _depth, std::string& _debug);
 
 	/// Generate random
-	std::string randomUniIntHex(u256 const& _minVal = 0, u256 const& _maxVal = std::numeric_limits<uint64_t>::max());
-	virtual u256 randomUniInt(u256 const& _minVal = 0, u256 const& _maxVal = std::numeric_limits<uint64_t>::max()) = 0;
+	std::string randomUniIntHex(u256 const& _minVal = 0, u256 const& _maxVal = std::numeric_limits<int64_t>::max());
+	virtual u256 randomUniInt(u256 const& _minVal = 0, u256 const& _maxVal = std::numeric_limits<int64_t>::max()) = 0;
 	virtual int randomPercent() = 0;
 	virtual int randomSmallUniInt() = 0;
 	virtual int randomLength32() = 0;
 	virtual int randomSmallMemoryLength() = 0;
 	virtual int randomMemoryLength() = 0;
 	virtual uint8_t randomOpcode() = 0;
-	virtual uint8_t weightedOpcode(std::vector<int>& _weights) = 0;
+	virtual uint8_t weightedOpcode(std::vector<int> const& _weights) = 0;
 
 private:
 	std::vector<std::string> getTypes();

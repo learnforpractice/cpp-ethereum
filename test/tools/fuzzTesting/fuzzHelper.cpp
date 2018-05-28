@@ -25,8 +25,10 @@
 #include <test/tools/fuzzTesting/fuzzHelper.h>
 #include <test/tools/libtesteth/TestOutputHelper.h>
 #include <test/tools/jsontests/StateTests.h>
+#include <json_spirit/json_spirit.h>
 
 using namespace dev;
+using namespace std;
 const static std::array<eth::Instruction, 47> invalidOpcodes {{
 	eth::Instruction::INVALID,
 	eth::Instruction::PUSHC,
@@ -239,38 +241,45 @@ std::string RandomCodeBase::rndByteSequence(int _length, SizeStrictness _sizeTyp
 	return hash;
 }
 
+bool isOpcodeDefined(uint8_t _opcode)
+{
+	eth::Instruction inst = (eth::Instruction) _opcode;
+	eth::InstructionInfo info = eth::instructionInfo(inst);
+	return (info.gasPriceTier != dev::eth::Tier::Invalid && !info.name.empty()
+		&& std::find(invalidOpcodes.begin(), invalidOpcodes.end(), inst) == invalidOpcodes.end());
+}
+
+uint8_t makeOpcodeDefined(uint8_t _opcode)
+{
+	while (!isOpcodeDefined(_opcode))
+		_opcode++; //Byte code is yet not implemented. Try next one.
+	return _opcode;
+}
+
 //generate smart random code
 std::string RandomCodeBase::generate(int _maxOpNumber, RandomCodeOptions const& _options)
 {
 	std::string code;
-
 	if (test::RandomCode::get().randomPercent() < _options.emptyCodeProbability)
 		return code;
 
-	//random opCode amount
-	int size = (int)(test::RandomCode::get().randomPercent() * _maxOpNumber / 100);
+	//generate [0 ... _maxOpNumber] opcodes.
+	int size = test::RandomCode::get().randomPercent() * _maxOpNumber / 100;
 	assert(size <= _maxOpNumber);
 
 	for (auto i = 0; i < size; i++)
 	{
 		uint8_t opcode = _options.getWeightedRandomOpcode();
-		eth::Instruction inst = (eth::Instruction) opcode;
-		eth::InstructionInfo info = eth::instructionInfo(inst);
-
-		if (info.name.find("INVALID_INSTRUCTION") != std::string::npos || info.name.empty()
-			|| std::find(invalidOpcodes.begin(), invalidOpcodes.end(), inst) != invalidOpcodes.end())
+		if (!isOpcodeDefined(opcode) && _options.useUndefinedOpCodes)
 		{
-			if (_options.useUndefinedOpCodes)
-				code += toCompactHex(opcode, 1);
-			else
-			{
-				//Byte code is yet not implemented. do not count it.
-				i--;
-				continue;
-			}
+			code += toCompactHex(opcode, 1);
+			continue;
 		}
 		else
 		{
+			opcode = makeOpcodeDefined(opcode);
+			eth::Instruction inst = (eth::Instruction) opcode;
+			eth::InstructionInfo info = eth::instructionInfo(inst);
 			if (info.name.find("PUSH") != std::string::npos)
 			{
 				code += toCompactHex(opcode);
@@ -283,6 +292,7 @@ std::string RandomCodeBase::generate(int _maxOpNumber, RandomCodeOptions const& 
 			}
 		}
 	}
+
 	return "0x" + code;
 }
 
@@ -477,6 +487,45 @@ RandomCodeOptions::RandomCodeOptions() :
 	addAddress(Address("0x0000000000000000000000000000000000000008"), AddressType::ByzantiumPrecompiled);
 }
 
+void boost_require_range(int _value, int _min, int _max)
+{
+	BOOST_REQUIRE(_value >= _min);
+	BOOST_REQUIRE(_value <= _max);
+}
+
+int getProbability(json_spirit::mValue const& _obj)
+{
+	int probability = _obj.get_int();
+	boost_require_range(probability, 0, 100);
+	return probability;
+}
+
+void RandomCodeOptions::loadFromFile(boost::filesystem::path const& _jsonFileName)
+{
+	json_spirit::mValue v;
+	bytes const byteContents = dev::contents(_jsonFileName);
+	string const s = asString(byteContents);
+	BOOST_REQUIRE_MESSAGE(s.length() > 0, "Contents of " + _jsonFileName.string() + " is empty.");
+	json_spirit::read_string(s, v);
+
+	BOOST_REQUIRE(v.type() == json_spirit::obj_type);
+	json_spirit::mObject obj = v.get_obj();
+	BOOST_REQUIRE(obj.count("probabilities"));
+	BOOST_REQUIRE(obj.at("probabilities").type() == json_spirit::obj_type);
+
+	//Parse Probabilities
+	json_spirit::mObject probObj = obj.at("probabilities").get_obj();
+	useUndefinedOpCodes = probObj.at("useUndefinedOpCodes").get_bool();
+	smartCodeProbability = getProbability(probObj.at("smartCodeProbability"));
+	randomAddressProbability = getProbability(probObj.at("randomAddressProbability"));
+	emptyCodeProbability = getProbability(probObj.at("emptyCodeProbability"));
+	emptyAddressProbability = getProbability(probObj.at("emptyAddressProbability"));
+	precompiledAddressProbability = getProbability(probObj.at("precompiledAddressProbability"));
+	byzPrecompiledAddressProbability = getProbability(probObj.at("byzPrecompiledAddressProbability"));
+	precompiledDestProbability = getProbability(probObj.at("precompiledDestProbability"));
+	sendingAddressProbability = getProbability(probObj.at("sendingAddressProbability"));
+}
+
 void RandomCodeOptions::setWeight(eth::Instruction _opCode, int _weight)
 {
 	mapWeights.at((uint8_t)_opCode) = _weight;
@@ -569,41 +618,5 @@ int RandomCodeOptions::getWeightedRandomOpcode() const
 	return RandomCode::get().weightedOpcode(weights);
 }
 
-BOOST_FIXTURE_TEST_SUITE(RandomCodeTests, TestOutputHelperFixture)
-
-BOOST_AUTO_TEST_CASE(rndCode)
-{
-	try
-	{
-		test::RandomCodeOptions options;
-		options.emptyCodeProbability = 0;
-		std::string code = test::RandomCode::get().generate(1000, options);
-		BOOST_REQUIRE(!code.empty());
-	}
-	catch(dev::Exception const& _e)
-	{
-		BOOST_ERROR("Exception thrown when generating random code! " + diagnostic_information(_e));
-	}
-}
-
-BOOST_AUTO_TEST_CASE(rndStateTest)
-{
-	try
-	{
-		//Mac os bug is here
-		test::StateTestSuite suite;
-		test::RandomCodeOptions options;
-		test::TestOutputHelper::get().setCurrentTestFileName(std::string());
-		std::string test = test::RandomCode::get().fillRandomTest(suite, c_testExampleStateTest, options);
-		BOOST_REQUIRE(!test.empty());
-	}
-	catch(dev::Exception const& _e)
-	{
-		BOOST_ERROR("Exception thrown when generating random code! " + diagnostic_information(_e));
-	}
-}
-
-BOOST_AUTO_TEST_SUITE_END()
-
-}
-}
+}  // namespace test
+}  // namespace dev

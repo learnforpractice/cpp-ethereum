@@ -14,20 +14,18 @@
 	You should have received a copy of the GNU General Public License
 	along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 */
-/** @file ExtVM.h
- * @author Gav Wood <i@gavwood.com>
- * @date 2014
- */
 
 #pragma once
 
-#include <map>
-#include <functional>
-#include <libethcore/Common.h>
-#include <libevm/ExtVMFace.h>
-#include <libethcore/SealEngine.h>
-#include "State.h"
 #include "Executive.h"
+#include "State.h"
+
+#include <libethcore/Common.h>
+#include <libethcore/SealEngine.h>
+#include <libevm/ExtVMFace.h>
+
+#include <functional>
+#include <map>
 
 namespace dev
 {
@@ -36,21 +34,25 @@ namespace eth
 
 class SealEngineFace;
 
-/**
- * @brief Externality interface for the Virtual Machine providing access to world state.
- */
-class ExtVM: public ExtVMFace
+/// Externality interface for the Virtual Machine providing access to world state.
+class ExtVM : public ExtVMFace
 {
 public:
-	/// Full constructor.
-	ExtVM(State& _s, EnvInfo const& _envInfo, SealEngineFace const& _sealEngine, Address _myAddress, Address _caller, Address _origin, u256 _value, u256 _gasPrice, bytesConstRef _data, bytesConstRef _code, h256 const& _codeHash, unsigned _depth = 0, bool _staticCall = false):
-		ExtVMFace(_envInfo, _myAddress, _caller, _origin, _value, _gasPrice, _data, _code.toBytes(), _codeHash, _depth, _staticCall), m_s(_s), m_sealEngine(_sealEngine)
-	{
-		// Contract: processing account must exist. In case of CALL, the ExtVM
-		// is created only if an account has code (so exist). In case of CREATE
-		// the account must be created first.
-		assert(m_s.addressInUse(_myAddress));
-	}
+    /// Full constructor.
+    ExtVM(State& _s, EnvInfo const& _envInfo, SealEngineFace const& _sealEngine, Address _myAddress,
+        Address _caller, Address _origin, u256 _value, u256 _gasPrice, bytesConstRef _data,
+        bytesConstRef _code, h256 const& _codeHash, unsigned _depth, bool _isCreate,
+        bool _staticCall)
+      : ExtVMFace(_envInfo, _myAddress, _caller, _origin, _value, _gasPrice, _data, _code.toBytes(),
+            _codeHash, _depth, _isCreate, _staticCall),
+        m_s(_s),
+        m_sealEngine(_sealEngine)
+    {
+        // Contract: processing account must exist. In case of CALL, the ExtVM
+        // is created only if an account has code (so exist). In case of CREATE
+        // the account must be created first.
+        assert(m_s.addressInUse(_myAddress));
+    }
 
 	/// Read storage location.
 	virtual u256 store(u256 _n) override final { return m_s.storage(myAddress, _n); }
@@ -65,11 +67,10 @@ public:
 	virtual size_t codeSizeAt(Address _a) override final;
 
 	/// Create a new contract.
-	virtual std::pair<h160, owning_bytes_ref> create(u256 _endowment, u256& io_gas, bytesConstRef _code, Instruction _op, u256 _salt, OnOpFunc const& _onOp = {}) override final;
+	CreateResult create(u256 _endowment, u256& io_gas, bytesConstRef _code, Instruction _op, u256 _salt, OnOpFunc const& _onOp = {}) final;
 
-	/// Create a new message call. Leave _myAddressOverride as the default to use the present address as caller.
-	/// @returns success flag and output data, if any.
-	virtual std::pair<bool, owning_bytes_ref> call(CallParameters& _params) override final;
+	/// Create a new message call.
+	CallResult call(CallParameters& _params) final;
 
 	/// Read address's balance.
 	virtual u256 balance(Address _a) override final { return m_s.balance(_a); }

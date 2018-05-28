@@ -45,23 +45,23 @@ namespace dev {  namespace test {
 json_spirit::mValue StateTestSuite::doTests(json_spirit::mValue const& _input, bool _fillin) const
 {
 	BOOST_REQUIRE_MESSAGE(_input.type() == obj_type,
-		TestOutputHelper::get().get().testFileName() + " A GeneralStateTest file should contain an object.");
+		TestOutputHelper::get().get().testFile().string() + " A GeneralStateTest file should contain an object.");
 	BOOST_REQUIRE_MESSAGE(!_fillin || _input.get_obj().size() == 1,
-		TestOutputHelper::get().testFileName() + " A GeneralStateTest filler should contain only one test.");
+		TestOutputHelper::get().testFile().string() + " A GeneralStateTest filler should contain only one test.");
 	json_spirit::mValue v = json_spirit::mObject();
 
 	for (auto& i: _input.get_obj())
 	{
 		string const testname = i.first;
 		BOOST_REQUIRE_MESSAGE(i.second.type() == obj_type,
-			TestOutputHelper::get().testFileName() + " should contain an object under a test name.");
+			TestOutputHelper::get().testFile().string() + " should contain an object under a test name.");
 		json_spirit::mObject const& inputTest = i.second.get_obj();
 		v.get_obj()[testname] = json_spirit::mObject();
 		json_spirit::mObject& outputTest = v.get_obj()[testname].get_obj();
 
-		if (_fillin && !TestOutputHelper::get().testFileName().empty())
-			BOOST_REQUIRE_MESSAGE(testname + "Filler.json" == TestOutputHelper::get().testFileName(),
-				TestOutputHelper::get().testFileName() + " contains a test with a different name '" + testname + "'" );
+		if (_fillin && !TestOutputHelper::get().testFile().empty())
+			BOOST_REQUIRE_MESSAGE(testname + "Filler" == TestOutputHelper::get().testFile().stem().string(),
+				TestOutputHelper::get().testFile().string() + " contains a test with a different name '" + testname + "'" );
 
 		if (!TestOutputHelper::get().checkTest(testname))
 			continue;
@@ -72,9 +72,9 @@ json_spirit::mValue StateTestSuite::doTests(json_spirit::mValue const& _input, b
 
 		ImportTest importer(inputTest, outputTest);
 		Listener::ExecTimeGuard guard{i.first};
-		importer.executeTest();
+        importer.executeTest(_fillin);
 
-		if (_fillin)
+        if (_fillin)
 		{
 #if ETH_FATDB
 			if (inputTest.count("_info"))
@@ -92,6 +92,7 @@ json_spirit::mValue StateTestSuite::doTests(json_spirit::mValue const& _input, b
 			BOOST_REQUIRE_MESSAGE(inputTest.at("post").type() == obj_type, testname + " post field is not an object.");
 
 			//check post hashes against cpp client on all networks
+			bool foundResults = false;
 			mObject post = inputTest.at("post").get_obj();
 			vector<size_t> wrongTransactionsIndexes;
 			for (mObject::const_iterator i = post.begin(); i != post.end(); ++i)
@@ -104,8 +105,15 @@ json_spirit::mValue StateTestSuite::doTests(json_spirit::mValue const& _input, b
 						continue;
 					if (test::isDisabledNetwork(test::stringToNetId(i->first)))
 						continue;
-					importer.checkGeneralTestSection(exp.get_obj(), wrongTransactionsIndexes, i->first);
+					if (importer.checkGeneralTestSection(exp.get_obj(), wrongTransactionsIndexes, i->first))
+						foundResults = true;
 				}
+			}
+
+			if (!foundResults)
+			{
+				Options const& opt = Options::get();
+				BOOST_ERROR("Transaction not found! (Network: " + (opt.singleTestNet.empty() ? "Any" : opt.singleTestNet) + ", dataInd: " + toString(opt.trDataIndex) + ", gasInd: " + toString(opt.trGasIndex) + ", valInd: " + toString(opt.trValueIndex) + ")");
 			}
 
 			if (Options::get().statediff)
@@ -132,13 +140,13 @@ class GeneralTestFixture
 public:
 	GeneralTestFixture()
 	{
+		test::StateTestSuite suite;
 		string casename = boost::unit_test::framework::current_test_case().p_name;
 		if (casename == "stQuadraticComplexityTest" && !test::Options::get().all)
 		{
 			std::cout << "Skipping " << casename << " because --all option is not specified.\n";
 			return;
 		}
-		test::StateTestSuite suite;
 		suite.runAllTestsInFolder(casename);
 	}
 };
@@ -195,6 +203,9 @@ BOOST_AUTO_TEST_CASE(stZeroKnowledge2){}
 BOOST_AUTO_TEST_CASE(stCodeCopyTest){}
 BOOST_AUTO_TEST_CASE(stBugs){}
 
+//Constantinople Tests
+BOOST_AUTO_TEST_CASE(stShift){}
+
 //Stress Tests
 BOOST_AUTO_TEST_CASE(stAttackTest){}
 BOOST_AUTO_TEST_CASE(stMemoryStressTest){}
@@ -202,4 +213,8 @@ BOOST_AUTO_TEST_CASE(stQuadraticComplexityTest){}
 
 //Invalid Opcode Tests
 BOOST_AUTO_TEST_CASE(stBadOpcode){}
+
+//New Tests
+BOOST_AUTO_TEST_CASE(stArgsZeroOneBalance){}
+BOOST_AUTO_TEST_CASE(stEWASMTests){}
 BOOST_AUTO_TEST_SUITE_END()
