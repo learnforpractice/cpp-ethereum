@@ -448,6 +448,7 @@ u256 State::storage(Address const& _id, u256 const& _key) const
 
 void State::setStorage(Address const& _contract, u256 const& _key, u256 const& _value)
 {
+   printf("+++++++++setStorage: %s \n", _value.str().c_str());
     m_changeLog.emplace_back(_contract, _key, storage(_contract, _key));
     m_cache[_contract].setStorage(_key, _value);
 }

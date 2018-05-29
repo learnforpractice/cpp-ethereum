@@ -127,6 +127,7 @@ void log(
 	auto& env = static_cast<ExtVMFace&>(*_context);
 	assert(fromEvmC(*_addr) == env.myAddress);
 	h256 const* pTopics = reinterpret_cast<h256 const*>(_topics);
+	printf("evmlog: %s \n", _data);
 	env.log(h256s{pTopics, pTopics + _numTopics},
 			bytesConstRef{_data, _dataSize});
 }

@@ -24,14 +24,6 @@
 
 cmake_minimum_required(VERSION 3.5.1)
 
-include(evmc/cmake/cable/bootstrap.cmake)
-include(CableBuildInfo)
-include(CableBuildType)
-include(CableToolchains)
-include(GNUInstallDirs)
-
-cable_configure_toolchain(DEFAULT cxx11)
-
 project(cpp-ethereum)
 set(PROJECT_VERSION 1.4.0.dev0)
 
@@ -52,10 +44,10 @@ include(EthExecutableHelper)
 include(EthDependencies)
 include(EthUtils)
 
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-hunter_add_package(Boost COMPONENTS program_options filesystem system thread context fiber log)
-find_package(Boost CONFIG REQUIRED program_options filesystem system thread context fiber log)
+#set(Boost_USE_STATIC_LIBS ON)
+#set(Boost_USE_MULTITHREADED ON)
+#hunter_add_package(Boost COMPONENTS program_options filesystem system thread context fiber log)
+#find_package(Boost CONFIG REQUIRED program_options filesystem system thread context fiber log)
 
 hunter_add_package(jsoncpp)
 find_package(jsoncpp CONFIG REQUIRED)
@@ -118,7 +110,7 @@ if (EVMJIT)
     add_subdirectory(evmjit)
 endif()
 
-add_subdirectory(eth)
+#add_subdirectory(eth)
 
 add_subdirectory(utils)
 
