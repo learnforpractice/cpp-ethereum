@@ -29,6 +29,14 @@ endif()
 #add_custom_target(ecmult_static_context gen_context WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 add_library(secp256k1eth STATIC src/secp256k1.c)
+
+if( APPLE )
+    # Apple Specific Options Here
+else( APPLE )
+    # Linux Specific Options Here
+    target_compile_options(secp256k1eth PRIVATE -fPIC)
+endif( APPLE )
+
 target_compile_definitions(secp256k1eth PRIVATE ${COMMON_COMPILE_FLAGS} ${COMPILE_FLAGS})
 target_include_directories(secp256k1eth PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(secp256k1eth PRIVATE ${COMPILE_OPTIONS})
