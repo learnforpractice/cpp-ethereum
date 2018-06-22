@@ -8,8 +8,8 @@ ExternalProject_Add(libff
     PREFIX "${prefix}"
     DOWNLOAD_NAME libff-03b719a7.tar.gz
     DOWNLOAD_NO_PROGRESS TRUE
-    URL https://github.com/scipr-lab/libff/archive/03b719a7c81757071f99fc60be1f7f7694e51390.tar.gz
-    URL_HASH SHA256=81b476089af43025c8f253cb1a9b5038a1c375baccffea402fa82042e608ab02
+    URL https://github.com/learnforpractice/libff/archive/libff-shared.tar.gz
+    URL_HASH SHA256=75d5536fe1a8bf124ce7741dd43b8ee56bcee655e10ba356e968938396425207
     CMAKE_ARGS
         -DCMAKE_BUILD_TYPE=Release
         -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
@@ -24,6 +24,7 @@ ExternalProject_Add(libff
     INSTALL_COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config Release --target install
     BUILD_BYPRODUCTS "${libff_library}"
 )
+
 add_dependencies(libff mpir)
 
 # Create snark imported library
