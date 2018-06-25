@@ -414,6 +414,15 @@ bool Session::checkRead(std::size_t _expected, boost::system::error_code _ec, st
     }
     else if (_ec && _length < _expected)
     {
+        if (_ec.value() == 2 )
+        {
+           // 16:05:23.484|p2p  Invalid packet (timestamp in the past) from 212.90.43.43 : 30303
+           //16:00:32.900|p2p|c585fd4d…|Parity/v1.7.8-unstable-d5fcf3b-20171025/x86_64-linux-gnu/rustc1.19.0  Error reading - Abrupt peer disconnect: End of file 2
+        }
+        else
+        {
+           cnetlog << "Error reading - Abrupt peer disconnect: " << _ec.message() << _ec.value();
+        }
         cnetlog << "Error reading - Abrupt peer disconnect: " << _ec.message();
         repMan().noteRude(*this);
         drop(TCPError);

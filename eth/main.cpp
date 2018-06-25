@@ -1,18 +1,18 @@
 /*
-    This file is part of cpp-ethereum.
+   This file is part of cpp-ethereum.
 
-    cpp-ethereum is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+   cpp-ethereum is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-    cpp-ethereum is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+   cpp-ethereum is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU General Public License
+   along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
  * @file main.cpp
@@ -63,6 +63,7 @@
 #include "AccountManager.h"
 
 #include <eth-buildinfo.h>
+#include <Python.h>
 
 using namespace std;
 using namespace dev;
@@ -75,15 +76,15 @@ namespace
 {
 
 std::atomic<bool> g_silence = {false};
-unsigned const c_lineWidth = 160;
+unsigned const c_lineWidth = 160;string ethCredits(bool _interactive = false)
 
-string ethCredits(bool _interactive = false)
+
 {
-    std::ostringstream cout;
-    if (_interactive)
-        cout
-            << "Type 'exit' to quit\n\n";
-    return credits() + cout.str();
+   std::ostringstream cout;
+   if (_interactive)
+      cout
+         << "Type 'exit' to quit\n\n";
+   return credits() + cout.str();
 }
 
 void version()
@@ -111,55 +112,55 @@ that users do not need to install language packs for their OS.
 void setDefaultOrCLocale()
 {
 #if __unix__
-    if (!std::setlocale(LC_ALL, ""))
-    {
-        setenv("LC_ALL", "C", 1);
-    }
+   if (!std::setlocale(LC_ALL, ""))
+   {
+      setenv("LC_ALL", "C", 1);
+   }
 #endif
 }
 
 void importPresale(KeyManager& _km, string const& _file, function<string()> _pass)
 {
-    KeyPair k = _km.presaleSecret(contentsString(_file), [&](bool){ return _pass(); });
-    _km.import(k.secret(), "Presale wallet" + _file + " (insecure)");
+   KeyPair k = _km.presaleSecret(contentsString(_file), [&](bool){ return _pass(); });
+   _km.import(k.secret(), "Presale wallet" + _file + " (insecure)");
 }
 
 enum class NodeMode
 {
-    PeerServer,
-    Full
+   PeerServer,
+   Full
 };
 
 enum class OperationMode
 {
-    Node,
-    Import,
-    ImportSnapshot,
-    Export
+   Node,
+   Import,
+   ImportSnapshot,
+   Export
 };
 
 enum class Format
 {
-    Binary,
-    Hex,
-    Human
+   Binary,
+   Hex,
+   Human
 };
 
 void stopSealingAfterXBlocks(eth::Client* _c, unsigned _start, unsigned& io_mining)
 {
-    try
-    {
-        if (io_mining != ~(unsigned)0 && io_mining && asEthashClient(_c)->isMining() && _c->blockChain().details().number - _start == io_mining)
-        {
-            _c->stopSealing();
-            io_mining = ~(unsigned)0;
-        }
-    }
-    catch (InvalidSealEngine&)
-    {
-    }
+   try
+   {
+      if (io_mining != ~(unsigned)0 && io_mining && asEthashClient(_c)->isMining() && _c->blockChain().details().number - _start == io_mining)
+      {
+         _c->stopSealing();
+         io_mining = ~(unsigned)0;
+      }
+   }
+   catch (InvalidSealEngine&)
+   {
+   }
 
-    this_thread::sleep_for(chrono::milliseconds(100));
+   this_thread::sleep_for(chrono::milliseconds(100));
 }
 
 class ExitHandler
@@ -176,18 +177,42 @@ bool ExitHandler::s_shouldExit = false;
 
 }
 
+static unique_ptr<ModularServer<>> jsonrpcIpcServer;
+
+#define MAXPATHLEN 1024
+static wchar_t env_home[MAXPATHLEN+1];
+extern "C" PyObject* PyInit_eth_();
+
+string jsonAdmin;
+static bool eth_finished = false;
+int eth_main(int argc, char** argv);
+
 int main(int argc, char** argv)
 {
-    setDefaultOrCLocale();
+   auto thread_ = boost::thread(eth_main, argc, argv);
 
-    // Init secp256k1 context by calling one of the functions.
-    toPublic({});
+   const char *chome = "/Users/newworld/dev/pyeos/libraries/python/dist";
+   mbstowcs(env_home, chome, sizeof(env_home)/sizeof(env_home[0]));
+   Py_SetPythonHome(env_home);
+   Py_InitializeEx(1);
+   PyEval_InitThreads();
 
-    // Init defaults
-    Defaults::get();
-    Ethash::init();
-    NoProof::init();
+   PyRun_SimpleString("import sys");
+   PyRun_SimpleString("from imp import reload");
+   PyRun_SimpleString("sys.path.append('../eth')");
 
+   PyInit_eth_();
+   PyRun_SimpleString("import eth");
+   PyRun_SimpleString("import web3");
+
+   PyRun_SimpleString("import readline");
+   PyRun_InteractiveLoop(stdin, "<stdin>");
+
+}
+
+int eth_main(int argc, char** argv)
+{
+ 
     /// Operating mode.
     OperationMode mode = OperationMode::Node;
 
@@ -205,7 +230,7 @@ int main(int argc, char** argv)
 
     bool ipc = true;
 
-    string jsonAdmin;
+//    string jsonAdmin;
     ChainParams chainParams;
     string privateChain;
 
@@ -1052,7 +1077,7 @@ int main(int argc, char** argv)
     else
         cout << "Networking disabled. To start, use netstart or pass --bootstrap or a remote host.\n";
 
-    unique_ptr<ModularServer<>> jsonrpcIpcServer;
+//    unique_ptr<ModularServer<>> jsonrpcIpcServer;
     unique_ptr<rpc::SessionManager> sessionManager;
     unique_ptr<SimpleAccountHolder> accountHolder;
 
@@ -1155,5 +1180,31 @@ int main(int argc, char** argv)
     auto netData = web3.saveNetwork();
     if (!netData.empty())
         writeFile(getDataDir() / fs::path("network.rlp"), netData);
-    return 0;
+
+   eth_finished = true;
+   return 0;
+}
+
+void handle_request(string& request, string& response) {
+   jsonrpcIpcServer->getHandler()->HandleRequest(request, response);
+}
+
+void quit_eth()
+{
+   ExitHandler::exitHandler(0);
+   while (!eth_finished)
+   {
+      this_thread::sleep_for(chrono::milliseconds(100));
+   }
+}
+
+string& get_key_()
+{
+   while (jsonAdmin.empty()) {
+      if (eth_finished) {
+         break;
+      }
+      this_thread::sleep_for(chrono::milliseconds(1000));
+   }
+   return jsonAdmin;
 }
