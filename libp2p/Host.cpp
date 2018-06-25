@@ -97,6 +97,8 @@ bytes ReputationManager::data(SessionFace const& _s, std::string const& _sub) co
     return bytes();
 }
 
+const unsigned Host::c_timerInterval = 100;
+
 Host::Host(string const& _clientVersion, KeyPair const& _alias, NetworkPreferences const& _n):
     Worker("p2p", 0),
     m_clientVersion(_clientVersion),
