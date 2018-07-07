@@ -110,7 +110,7 @@ if (EVMJIT)
     add_subdirectory(evmjit)
 endif()
 
-add_subdirectory(eth)
+#add_subdirectory(eth)
 
 add_subdirectory(utils)
 
