@@ -94,14 +94,14 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_subdirectory(libdevcore)
 add_subdirectory(libdevcrypto)
-#add_subdirectory(libp2p)
+add_subdirectory(libp2p)
 
 add_subdirectory(libethash)
 
 add_subdirectory(libethcore)
 add_subdirectory(libevm)
 
-#add_subdirectory(libethereum)
+add_subdirectory(libethereum)
 #add_subdirectory(libethashseal)
 
 #add_subdirectory(libwebthree)
