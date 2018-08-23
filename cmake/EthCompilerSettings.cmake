@@ -23,6 +23,9 @@ endif()
 
 eth_add_cxx_compiler_flag_if_supported(-Wimplicit-fallthrough)
 
+eth_add_cxx_compiler_flag_if_supported(-fvisibility-inlines-hidden)
+
+
 if (("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU") OR ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang"))
 	# Enables all the warnings about constructions that some users consider questionable,
 	# and that are easy to avoid.  Also enable some extra warning flags that are not
