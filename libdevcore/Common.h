@@ -45,11 +45,19 @@
 #include <functional>
 #include <string>
 #include <chrono>
+
+#if defined(_WIN64)
 #pragma warning(push)
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include <boost/multiprecision/cpp_int.hpp>
+
+#if defined(_WIN64)
 #pragma warning(pop)
+#endif
+
 #pragma GCC diagnostic pop
 #include "vector_ref.h"
 
