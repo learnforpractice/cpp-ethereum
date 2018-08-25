@@ -76,7 +76,6 @@ namespace
 std::atomic<bool> g_silence = {false};
 unsigned const c_lineWidth = 160;string ethCredits(bool _interactive = false)
 
-
 void version()
 {
     const auto* buildinfo = aleth_get_buildinfo();
