@@ -42,6 +42,8 @@ using namespace std;
 using namespace dev;
 using namespace dev::p2p;
 
+const unsigned Host::c_timerInterval = 100;
+
 /// Interval at which Host::run will call keepAlivePeers to ping peers.
 std::chrono::seconds const c_keepAliveInterval = std::chrono::seconds(30);
 

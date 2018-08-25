@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 set(prefix "${CMAKE_BINARY_DIR}/deps")
-set(MPIR_LIBRARY "${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mpir${CMAKE_STATIC_LIBRARY_SUFFIX}")
+set(MPIR_LIBRARY "${prefix}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}mpz${CMAKE_STATIC_LIBRARY_SUFFIX}")
 set(MPIR_INCLUDE_DIR "${prefix}/include")
 
 ExternalProject_Add(mpir

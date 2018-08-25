@@ -60,8 +60,8 @@
 #include "MinerAux.h"
 #include "AccountManager.h"
 
-#include <Python.h>
 #include <aleth/buildinfo.h>
+#include <Python.h>
 
 using namespace std;
 using namespace dev;
@@ -74,7 +74,8 @@ namespace
 {
 
 std::atomic<bool> g_silence = {false};
-unsigned const c_lineWidth = 160;string ethCredits(bool _interactive = false)
+unsigned const c_lineWidth = 160;
+//string ethCredits(bool _interactive = false);
 
 void version()
 {
@@ -108,15 +109,6 @@ specified default locale if it is valid, and if not then it will modify the
 environment the process is running in to use a sensible default. This also means
 that users do not need to install language packs for their OS.
 */
-void setDefaultOrCLocale()
-{
-#if __unix__
-   if (!std::setlocale(LC_ALL, ""))
-   {
-      setenv("LC_ALL", "C", 1);
-   }
-#endif
-}
 
 void importPresale(KeyManager& _km, string const& _file, function<string()> _pass)
 {
@@ -180,7 +172,7 @@ static unique_ptr<ModularServer<>> jsonrpcIpcServer;
 
 #define MAXPATHLEN 1024
 static wchar_t env_home[MAXPATHLEN+1];
-extern "C" PyObject* PyInit_eth_();
+//extern "C" PyObject* PyInit_eth_();
 
 string jsonAdmin;
 static bool eth_finished = false;
@@ -200,7 +192,7 @@ int main(int argc, char** argv)
    PyRun_SimpleString("from imp import reload");
    PyRun_SimpleString("sys.path.append('../eth')");
 
-   PyInit_eth_();
+//   PyInit_eth_();
    PyRun_SimpleString("import eth");
    PyRun_SimpleString("import web3");
 

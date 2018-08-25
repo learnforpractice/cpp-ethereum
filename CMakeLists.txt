@@ -62,7 +62,7 @@ configure_project()
 
 if(TESTS)
     # Import binaryen library before hera to make it available also to testeth.
-    include(hera/cmake/ProjectBinaryen.cmake)
+#    include(hera/cmake/ProjectBinaryen.cmake)
 endif()
 
 add_subdirectory(evmc)
@@ -77,9 +77,6 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 option(ALETH_INTERPRETER_SHARED "Build aleth-interpreter as a shared library" OFF)
 add_subdirectory(libaleth-interpreter)
 
-option(ALETH_INTERPRETER_SHARED "Build aleth-interpreter as a shared library" OFF)
-add_subdirectory(libaleth-interpreter)
-
 add_subdirectory(libdevcore)
 add_subdirectory(libdevcrypto)
 add_subdirectory(libp2p)
@@ -90,14 +87,15 @@ add_subdirectory(libevm)
 add_subdirectory(libethereum)
 add_subdirectory(libethashseal)
 
-#add_subdirectory(libwebthree)
-#add_subdirectory(libweb3jsonrpc)
+add_subdirectory(libwebthree)
+add_subdirectory(libweb3jsonrpc)
 
 if (EVMJIT)
     add_subdirectory(evmjit)
 endif()
 
 add_subdirectory(aleth)
+add_subdirectory(utils)
 
 if (TOOLS)
     add_subdirectory(aleth-key)
