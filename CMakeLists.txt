@@ -1,26 +1,6 @@
-#------------------------------------------------------------------------------
-# Top-level CMake file for cpp-ethereum.
-#
-# The documentation for cpp-ethereum is hosted at http://cpp-ethereum.org
-#
-# ------------------------------------------------------------------------------
-# This file is part of cpp-ethereum.
-#
-# cpp-ethereum is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# cpp-ethereum is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with cpp-ethereum.  If not, see <http://www.gnu.org/licenses/>
-#
-# (c) 2014-2016 cpp-ethereum contributors.
-#------------------------------------------------------------------------------
+# Aleth: Ethereum C++ client, tools and libraries.
+# Copyright 2018 Aleth Autors.
+# Licensed under the GNU General Public License, Version 3. See the LICENSE file.
 
 cmake_minimum_required(VERSION 3.5.1)
 
@@ -33,7 +13,7 @@ endif()
 
 cable_set_build_type(DEFAULT RelWithDebInfo CONFIGURATION_TYPES Debug;Release;RelWithDebInfo)
 
-cable_add_buildinfo_library(PREFIX eth)
+cable_add_buildinfo_library(PROJECT_NAME aleth)
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY On)
 
@@ -70,9 +50,6 @@ find_package(ethash CONFIG REQUIRED)
 include(ProjectSecp256k1)
 #include(ProjectLibFF)
 
-# Import binaryen library before hera to make it available also to testeth.
-#include(hera/cmake/ProjectBinaryen.cmake)
-
 find_package(Threads)
 
 if(MINIUPNPC)
@@ -83,6 +60,11 @@ set(UTILS_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/utils")
 
 configure_project()
 
+if(TESTS)
+    # Import binaryen library before hera to make it available also to testeth.
+    include(hera/cmake/ProjectBinaryen.cmake)
+endif()
+
 add_subdirectory(evmc)
 
 if (HERA)
@@ -92,11 +74,12 @@ endif()
 #Global include path for all libs.
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
+option(ALETH_INTERPRETER_SHARED "Build aleth-interpreter as a shared library" OFF)
+add_subdirectory(libaleth-interpreter)
+
 add_subdirectory(libdevcore)
 add_subdirectory(libdevcrypto)
 add_subdirectory(libp2p)
-
-add_subdirectory(libethash)
 
 add_subdirectory(libethcore)
 add_subdirectory(libevm)
@@ -111,20 +94,21 @@ if (EVMJIT)
     add_subdirectory(evmjit)
 endif()
 
-#add_subdirectory(eth)
-
-add_subdirectory(utils)
+add_subdirectory(aleth)
 
 if (TOOLS)
-#    add_subdirectory(ethkey)
-#    add_subdirectory(ethvm)
-#    add_subdirectory(rlp)
+    add_subdirectory(aleth-key)
+    add_subdirectory(aleth-vm)
+    add_subdirectory(rlp)
 endif()
 
 if (TESTS)
 #    enable_testing()
 #    add_subdirectory(test)
 endif()
+
+
+install(FILES ${PROJECT_BINARY_DIR}/aleth/buildinfo.json DESTINATION ${CMAKE_INSTALL_DATADIR}/aleth)
 
 
 if(WIN32)

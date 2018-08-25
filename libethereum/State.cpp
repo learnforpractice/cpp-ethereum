@@ -38,21 +38,6 @@ using namespace dev;
 using namespace dev::eth;
 namespace fs = boost::filesystem;
 
-namespace
-{
-
-/// @returns true when normally halted; false when exceptionally halted.
-bool executeTransaction(Executive& _e, Transaction const& _t, OnOpFunc const& _onOp)
-{
-    _e.initialize(_t);
-
-    if (!_e.execute())
-        _e.go(_onOp);
-    return _e.finalize();
-}
-
-}
-
 State::State(u256 const& _accountStartNonce, OverlayDB const& _db, BaseState _bs):
     m_db(_db),
     m_state(&m_db),
@@ -230,7 +215,7 @@ unordered_map<Address, u256> State::addresses() const
             ret[i.first] = RLP(i.second)[1].toInt<u256>();
     return ret;
 #else
-    BOOST_THROW_EXCEPTION(InterfaceNotSupported("State::addresses()"));
+    BOOST_THROW_EXCEPTION(InterfaceNotSupported() << errinfo_interface("State::addresses()"));
 #endif
 }
 
@@ -240,6 +225,7 @@ std::pair<State::AddressMap, h256> State::addresses(
     AddressMap addresses;
     h256 nextKey;
 
+#if ETH_FATDB
     for (auto it = m_state.hashedLowerBound(_beginHash); it != m_state.hashedEnd(); ++it)
     {
         auto const address = Address(it.key());
@@ -260,6 +246,7 @@ std::pair<State::AddressMap, h256> State::addresses(
         h256 const hashedAddress((*it).first);
         addresses[hashedAddress] = address;
     }
+#endif
 
     // get addresses from cache with hash >= _beginHash (both new and old touched, we can't
     // distinguish them) and order by hash
@@ -286,6 +273,7 @@ std::pair<State::AddressMap, h256> State::addresses(
 
     return {addresses, nextKey};
 }
+
 
 void State::setRoot(h256 const& _r)
 {
@@ -464,6 +452,7 @@ void State::clearStorage(Address const& _contract)
 
 map<h256, pair<u256, u256>> State::storage(Address const& _id) const
 {
+#if ETH_FATDB
     map<h256, pair<u256, u256>> ret;
 
     if (Account const* a = account(_id))
@@ -494,6 +483,10 @@ map<h256, pair<u256, u256>> State::storage(Address const& _id) const
         }
     }
     return ret;
+#else
+    (void) _id;
+    BOOST_THROW_EXCEPTION(InterfaceNotSupported() << errinfo_interface("State::storage(Address const& _id)"));
+#endif
 }
 
 h256 State::storageRoot(Address const& _id) const
@@ -612,9 +605,9 @@ std::pair<ExecutionResult, TransactionReceipt> State::execute(EnvInfo const& _en
 
     auto onOp = _onOp;
 #if ETH_VMTRACE
-    onOp = e.simpleTrace();  // override tracer
+    if (!onOp)
+        onOp = e.simpleTrace();
 #endif
-
     u256 const startGasUsed = _envInfo.gasUsed();
     bool const statusCode = executeTransaction(e, _t, onOp);
 
@@ -649,6 +642,26 @@ void State::executeBlockTransactions(Block const& _block, unsigned _txCount, Las
         executeTransaction(e, _block.pending()[i], OnOpFunc());
 
         gasUsed += e.gasUsed();
+    }
+}
+
+/// @returns true when normally halted; false when exceptionally halted; throws when internal VM
+/// exception occurred.
+bool State::executeTransaction(Executive& _e, Transaction const& _t, OnOpFunc const& _onOp)
+{
+    size_t const savept = savepoint();
+    try
+    {
+        _e.initialize(_t);
+
+        if (!_e.execute())
+            _e.go(_onOp);
+        return _e.finalize();
+    }
+    catch (Exception const&)
+    {
+        rollback(savept);
+        throw;
     }
 }
 

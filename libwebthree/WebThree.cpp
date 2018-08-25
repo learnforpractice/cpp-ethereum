@@ -23,7 +23,7 @@
 #include <libethashseal/EthashClient.h>
 #include <libethashseal/Ethash.h>
 
-#include <eth-buildinfo.h>
+#include <aleth/buildinfo.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
@@ -39,24 +39,32 @@ static_assert(BOOST_VERSION >= 106400, "Wrong boost headers version");
 WebThreeDirect::WebThreeDirect(std::string const& _clientVersion,
     boost::filesystem::path const& _dbPath, boost::filesystem::path const& _snapshotPath,
     eth::ChainParams const& _params, WithExisting _we, std::set<std::string> const& _interfaces,
-    NetworkPreferences const& _n, bytesConstRef _network, bool _testing)
+    NetworkConfig const& _n, bytesConstRef _network, bool _testing)
   : m_clientVersion(_clientVersion), m_net(_clientVersion, _n, _network)
 {
     if (_dbPath.size())
         Defaults::setDBPath(_dbPath);
+
     if (_interfaces.count("eth"))
     {
-        Ethash::init();
-        NoProof::init();
-        if (_params.sealEngineName == "Ethash")
-            m_ethereum.reset(new eth::EthashClient(_params, (int)_params.networkID, &m_net, shared_ptr<GasPricer>(), _dbPath, _snapshotPath, _we));
-        else if (_params.sealEngineName == "NoProof" && _testing)
-            m_ethereum.reset(new eth::ClientTest(_params, (int)_params.networkID, &m_net, shared_ptr<GasPricer>(), _dbPath, _we));
+        if (_testing)
+            m_ethereum.reset(new eth::ClientTest(
+                _params, (int)_params.networkID, m_net, shared_ptr<GasPricer>(), _dbPath, _we));
         else
-            m_ethereum.reset(new eth::Client(_params, (int)_params.networkID, &m_net, shared_ptr<GasPricer>(), _dbPath, _snapshotPath, _we));
+        {
+            if (_params.sealEngineName == Ethash::name())
+                m_ethereum.reset(new eth::EthashClient(_params, (int)_params.networkID, m_net,
+                    shared_ptr<GasPricer>(), _dbPath, _snapshotPath, _we));
+            else if (_params.sealEngineName == NoProof::name())
+                m_ethereum.reset(new eth::Client(_params, (int)_params.networkID, m_net,
+                    shared_ptr<GasPricer>(), _dbPath, _snapshotPath, _we));
+            else
+                BOOST_THROW_EXCEPTION(ChainParamsInvalid() << errinfo_comment(
+                                          "Unknown seal engine: " + _params.sealEngineName));
+        }
         m_ethereum->startWorking();
 
-        const auto* buildinfo = eth_get_buildinfo();
+        const auto* buildinfo = aleth_get_buildinfo();
         m_ethereum->setExtraData(rlpList(0, string{buildinfo->project_version}.substr(0, 5) + "++" +
                                                 string{buildinfo->git_commit_hash}.substr(0, 4) +
                                                 string{buildinfo->build_type}.substr(0, 1) +
@@ -82,22 +90,22 @@ WebThreeDirect::~WebThreeDirect()
 
 std::string WebThreeDirect::composeClientVersion(std::string const& _client)
 {
-    const auto* buildinfo = eth_get_buildinfo();
+    const auto* buildinfo = aleth_get_buildinfo();
     return _client + "/" + buildinfo->project_version + "/" + buildinfo->system_name + "/" +
            buildinfo->compiler_id + buildinfo->compiler_version + "/" + buildinfo->build_type;
 }
 
-p2p::NetworkPreferences const& WebThreeDirect::networkPreferences() const
+p2p::NetworkConfig const& WebThreeDirect::networkConfig() const
 {
-    return m_net.networkPreferences();
+    return m_net.networkConfig();
 }
 
-void WebThreeDirect::setNetworkPreferences(p2p::NetworkPreferences const& _n, bool _dropPeers)
+void WebThreeDirect::setNetworkConfig(p2p::NetworkConfig const& _n, bool _dropPeers)
 {
     auto had = isNetworkStarted();
     if (had)
         stopNetwork();
-    m_net.setNetworkPreferences(_n, _dropPeers);
+    m_net.setNetworkConfig(_n, _dropPeers);
     if (had)
         startNetwork();
 }

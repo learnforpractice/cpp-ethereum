@@ -1,13 +1,16 @@
 [submodule "evmjit"]
 	path = evmjit
-	url = https://github.com/learnforpractice/evmjit
+	url = https://github.com/ethereum/evmjit
 	branch = develop
 [submodule "test/tests"]
 	path = test/jsontests
 	url = https://github.com/learnforpractice/tests.git
 [submodule "hera"]
 	path = hera
-	url = https://github.com/learnforpractice/hera
+	url = https://github.com/ethereum/hera
 [submodule "evmc"]
 	path = evmc
-	url = https://github.com/learnforpractice/evmc
+	url = https://github.com/ethereum/evmc
+[submodule "cable"]
+	path = cmake/cable
+	url = https://github.com/ethereum/cable

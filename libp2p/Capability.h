@@ -33,23 +33,32 @@ class ReputationManager;
 
 class Capability: public std::enable_shared_from_this<Capability>
 {
-    friend class Session;
-
 public:
-    Capability(std::shared_ptr<SessionFace> _s, HostCapabilityFace* _h, unsigned _idOffset);
-    virtual ~Capability() {}
+    Capability(std::weak_ptr<SessionFace> _s, std::string const& _name, unsigned _messageCount,
+        unsigned _idOffset);
+    virtual ~Capability() = default;
 
     // Implement these in the derived class.
-/*  static std::string name() { return ""; }
-    static u256 version() { return 0; }
-    static unsigned messageCount() { return 0; }
-*/
+    // static std::string name() { return ""; }
+    // static u256 version() { return 0; }
+    // static unsigned messageCount() { return 0; }
+
+    bool enabled() const { return m_enabled; }
+    bool canHandle(unsigned _packetType) const
+    {
+        return _packetType >= m_idOffset && _packetType < m_messageCount + m_idOffset;
+    }
+
+    bool interpret(unsigned _packetType, RLP const& _rlp)
+    {
+        return interpretCapabilityPacket(_packetType - m_idOffset, _rlp);
+    }
+
+    virtual void onDisconnect() {}
+
 protected:
     std::shared_ptr<SessionFace> session() const { return m_session.lock(); }
-    HostCapabilityFace* hostCapability() const { return m_hostCap; }
-
-    virtual bool interpret(unsigned _id, RLP const&) = 0;
-    virtual void onDisconnect() {}
+    virtual bool interpretCapabilityPacket(unsigned _id, RLP const&) = 0;
 
     void disable(std::string const& _problem);
 
@@ -59,9 +68,10 @@ protected:
 
 private:
     std::weak_ptr<SessionFace> m_session;
-    HostCapabilityFace* m_hostCap;
     bool m_enabled = true;
-    unsigned m_idOffset;
+    std::string const m_name;
+    unsigned const m_messageCount;
+    unsigned const m_idOffset;
 };
 
 }

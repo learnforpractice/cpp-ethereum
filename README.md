@@ -1,20 +1,17 @@
-# cpp-ethereum - Ethereum C++ client
+# Aleth – Ethereum C++ client, tools and libraries
 
-This repository contains [cpp-ethereum](http://cpp-ethereum.org), the [Ethereum](https://ethereum.org) C++ client.
-
-It is the third most popular of the Ethereum clients, behind [geth](https://github.com/ethereum/go-ethereum) (the [go](https://golang.org)
-client) and [Parity](https://github.com/paritytech/parity) (the [rust](https://www.rust-lang.org/) client).  The code is 
-[portable](http://cpp-ethereum.org/portability.html) and has been used successfully on a very broad range
-of operating systems and hardware.
+> The collection of C++ libraries and tools for Ethereum, 
+> formerly known as _cpp-ethereum_ project.
+> This includes the full Ethereum client **aleth**.
 
 
 ## Contact
 
 [![Gitter](https://img.shields.io/gitter/room/ethereum/cpp-ethereum.svg)](https://gitter.im/ethereum/cpp-ethereum)
-[![GitHub Issues](https://img.shields.io/github/issues-raw/ethereum/cpp-ethereum.svg)](https://github.com/ethereum/cpp-ethereum/issues)
+[![GitHub Issues](https://img.shields.io/github/issues-raw/ethereum/cpp-ethereum.svg)](https://github.com/ethereum/aleth/issues)
 
 - Chat in [cpp-ethereum channel on Gitter](https://gitter.im/ethereum/cpp-ethereum).
-- Report bugs, issues or feature requests using [GitHub issues](issues/new).
+- Report bugs, issues or feature requests using [GitHub issues](https://github.com/ethereum/aleth/issues/new).
 
 
 ## Getting Started
@@ -36,21 +33,20 @@ Windows          | [![AppVeyor](https://img.shields.io/appveyor/ci/ethereum/cpp-
 Git and GitHub are used to maintain the source code. Clone the repository by:
 
 ```shell
-git clone --recursive https://github.com/ethereum/cpp-ethereum.git
-cd cpp-ethereum
+git clone --recursive https://github.com/ethereum/aleth.git
+cd aleth
 ```
 
 The `--recursive` option is important. It orders git to clone additional 
 submodules to build the project.
-If you missed `--recursive` option you can correct your mistake with command 
+If you missed `--recursive` option, you are able to correct your mistake with command 
 `git submodule update --init`.
 
 ### Install CMake
 
-CMake is used to control the build configuration of the project. Quite recent 
-version of CMake is required 
+CMake is used to control the build configuration of the project. Latest version of CMake is required 
 (at the time of writing [3.4.3 is the minimum](CMakeLists.txt#L25)).
-We recommend installing CMake by downloading and unpacking the binary 
+We strongly recommend you to install CMake by downloading and unpacking the binary 
 distribution  of the latest version available on the 
 [**CMake download page**](https://cmake.org/download/).
 
@@ -72,7 +68,7 @@ development variant:
 - leveldb
 
 They usually can be installed using system-specific package manager.
-Examples for some systems:
+The examples for some systems are shown below:
 
 Operating system | Installation command
 ---------------- | --------------------
@@ -111,29 +107,29 @@ cmake --build .        # Build all default targets.
 On **Windows** Visual Studio 2015 is required. You should generate Visual Studio 
 solution file (.sln) for 64-bit architecture by adding 
 `-G "Visual Studio 14 2015 Win64"` argument to the CMake configure command.
-After configuration is completed, the `cpp-ethereum.sln` can be found in the
+After configuration is completed, the `aleth.sln` can be found in the
 `build` directory.
 
 ```shell
 cmake .. -G "Visual Studio 14 2015 Win64"
 ```
 
-## Contributing
+## Contribute
 
-[![Contributors](https://img.shields.io/github/contributors/ethereum/cpp-ethereum.svg)](https://github.com/ethereum/cpp-ethereum/graphs/contributors)
+[![Contributors](https://img.shields.io/github/contributors/ethereum/aleth.svg)](https://github.com/ethereum/aleth/graphs/contributors)
 [![Gitter](https://img.shields.io/gitter/room/ethereum/cpp-ethereum.svg)](https://gitter.im/ethereum/cpp-ethereum)
-[![up-for-grabs](https://img.shields.io/github/issues-raw/ethereum/cpp-ethereum/up-for-grabs.svg)](https://github.com/ethereum/cpp-ethereum/labels/up-for-grabs)
+[![up-for-grabs](https://img.shields.io/github/issues-raw/ethereum/aleth/help%20wanted.svg)](https://github.com/ethereum/aleth/labels/help%20wanted)
 
-The current codebase is the work of many, many hands, with nearly 100
-[individual contributors](https://github.com/ethereum/cpp-ethereum/graphs/contributors) over the course of its development.
+The current codebase is the work of many, many hands, with over 100
+[individual contributors](https://github.com/ethereum/aleth/graphs/contributors) over the course of its development.
 
 Our day-to-day development chat happens on the
 [cpp-ethereum](https://gitter.im/ethereum/cpp-ethereum) Gitter channel.
 
 All contributions are welcome! We try to keep a list of tasks that are suitable
 for newcomers under the tag 
-[up-for-grabs](https://github.com/ethereum/cpp-ethereum/labels/up-for-grabs).
-If you have any questions, please just ask.
+[help wanted](https://github.com/ethereum/cpp-ethereum/labels/help%20wanted).
+If you have any questions, please do not hestitate to ask us about more information.
 
 Please read [CONTRIBUTING](CONTRIBUTING.md) and [CODING_STYLE](CODING_STYLE.md) 
 thoroughly before making alterations to the code base.
@@ -159,6 +155,6 @@ To run the tests, make sure you clone https://github.com/ethereum/tests and poin
 
 ## License
 
-[![License](https://img.shields.io/github/license/ethereum/cpp-ethereum.svg)](LICENSE)
+[![License](https://img.shields.io/github/license/ethereum/aleth.svg)](LICENSE)
 
 All contributions are made under the [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.en.html). See [LICENSE](LICENSE).

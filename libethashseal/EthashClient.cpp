@@ -44,7 +44,7 @@ EthashClient* dev::eth::asEthashClient(Interface* _c)
 
 DEV_SIMPLE_EXCEPTION(ChainParamsNotEthash);
 
-EthashClient::EthashClient(ChainParams const& _params, int _networkID, p2p::Host* _host,
+EthashClient::EthashClient(ChainParams const& _params, int _networkID, p2p::Host& _host,
     std::shared_ptr<GasPricer> _gpForAdoption, fs::path const& _dbPath,
     fs::path const& _snapshotPath, WithExisting _forceAction,
     TransactionQueue::Limits const& _limits)
@@ -110,13 +110,6 @@ bool EthashClient::submitEthashWork(h256 const& _mixHash, h64 const& _nonce)
 {
     ethash()->manuallySubmitWork(_mixHash, _nonce);
     return true;
-}
-
-void EthashClient::setShouldPrecomputeDAG(bool _precompute)
-{
-    bytes trueBytes {1};
-    bytes falseBytes {0};
-    sealEngine()->setOption("precomputeDAG", _precompute ? trueBytes: falseBytes);
 }
 
 void EthashClient::submitExternalHashrate(u256 const& _rate, h256 const& _id)

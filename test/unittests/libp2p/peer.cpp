@@ -43,20 +43,25 @@ struct P2PPeerFixture: public TestOutputHelperFixture
 class TestCap: public Capability
 {
 public:
-    TestCap(std::shared_ptr<SessionFace> _s, HostCapabilityFace* _h, unsigned _idOffset, CapDesc const&): Capability(_s, _h, _idOffset) {}
-    virtual ~TestCap() {}
+    TestCap(std::weak_ptr<SessionFace> _s, std::string const& _name, unsigned _messageCount,
+        unsigned _idOffset, CapDesc const&)
+      : Capability(_s, _name, _messageCount, _idOffset)
+    {}
     static std::string name() { return "p2pTestCapability"; }
     static u256 version() { return 2; }
     static unsigned messageCount() { return UserPacket + 1; }
 
 protected:
-    virtual bool interpret(unsigned _id, RLP const& _r) override { return _id > 0 || _r.size() > 0; }
+    bool interpretCapabilityPacket(unsigned _id, RLP const& _r) override
+    {
+        return _id > 0 || _r.size() > 0;
+    }
 };
 
 class TestHostCap: public HostCapability<TestCap>, public Worker
 {
 public:
-    TestHostCap(): Worker("test") {}
+    TestHostCap(Host const& _host) : HostCapability<TestCap>(_host), Worker("test") {}
     virtual ~TestHostCap() {}
 };
 
@@ -65,21 +70,21 @@ BOOST_FIXTURE_TEST_SUITE(p2p, P2PPeerFixture)
 
 BOOST_AUTO_TEST_CASE(host)
 {
-    Host host1("Test", NetworkPreferences("127.0.0.1", 0, false));
+    Host host1("Test", NetworkConfig("127.0.0.1", 0, false));
     host1.start();
     auto host1port = host1.listenPort();
     BOOST_REQUIRE(host1port);
 
-    Host host2("Test", NetworkPreferences("127.0.0.1", 0, false));
+    Host host2("Test", NetworkConfig("127.0.0.1", 0, false));
     host2.start();
     auto host2port = host2.listenPort();
     BOOST_REQUIRE(host2port);
     
     BOOST_REQUIRE_NE(host1port, host2port);
 
-    host1.registerCapability(make_shared<TestHostCap>());
-    host2.registerCapability(make_shared<TestHostCap>());
-    
+    host1.registerCapability(make_shared<TestHostCap>(host1));
+    host2.registerCapability(make_shared<TestHostCap>(host2));
+
     auto node2 = host2.id();
     int const step = 10;
 
@@ -121,10 +126,10 @@ BOOST_AUTO_TEST_CASE(host)
 
 BOOST_AUTO_TEST_CASE(networkConfig)
 {
-    Host save("Test", NetworkPreferences(false));
+    Host save("Test", NetworkConfig(false));
     bytes store(save.saveNetwork());
     
-    Host restore("Test", NetworkPreferences(false), bytesConstRef(&store));
+    Host restore("Test", NetworkConfig(false), bytesConstRef(&store));
     BOOST_REQUIRE(save.id() == restore.id());
 }
 
@@ -138,7 +143,7 @@ BOOST_AUTO_TEST_CASE(saveNodes)
 
     for (unsigned i = 0; i < c_nodes; ++i)
     {
-        Host* h = new Host("Test", NetworkPreferences("127.0.0.1", 0, false));
+        Host* h = new Host("Test", NetworkConfig("127.0.0.1", 0, false));
         h->setIdealPeerCount(10);		
         h->start(); // starting host is required so listenport is available
         while (!h->haveNetwork())
@@ -147,7 +152,7 @@ BOOST_AUTO_TEST_CASE(saveNodes)
         BOOST_REQUIRE(h->listenPort());
         bool inserted = ports.insert(h->listenPort()).second;
         BOOST_REQUIRE(inserted);
-        h->registerCapability(make_shared<TestHostCap>());
+        h->registerCapability(make_shared<TestHostCap>(*h));
         hosts.push_back(h);
     }
     
@@ -196,8 +201,8 @@ BOOST_AUTO_TEST_CASE(requirePeer)
 {
     unsigned const step = 10;
     const char* const localhost = "127.0.0.1";
-    NetworkPreferences prefs1(localhost, 0, false);
-    NetworkPreferences prefs2(localhost, 0, false);
+    NetworkConfig prefs1(localhost, 0, false);
+    NetworkConfig prefs2(localhost, 0, false);
     Host host1("Test", prefs1);
     Host host2("Test", prefs2);
     host1.start();
@@ -209,8 +214,8 @@ BOOST_AUTO_TEST_CASE(requirePeer)
     BOOST_REQUIRE(port2);
     BOOST_REQUIRE_NE(port1, port2);
 
-    host1.registerCapability(make_shared<TestHostCap>());
-    host2.registerCapability(make_shared<TestHostCap>());
+    host1.registerCapability(make_shared<TestHostCap>(host1));
+    host2.registerCapability(make_shared<TestHostCap>(host2));
 
     host1.requirePeer(node2, NodeIPEndpoint(bi::address::from_string(localhost), port2, port2));
 
@@ -308,7 +313,7 @@ int peerTest(int argc, char** argv)
             remoteHost = argv[i];
     }
 
-    Host ph("Test", NetworkPreferences(listenPort));
+    Host ph("Test", NetworkConfig(listenPort));
 
     if (!remoteHost.empty() && !remoteAlias)
         ph.addNode(remoteAlias, NodeIPEndpoint(bi::address::from_string(remoteHost), remotePort, remotePort));

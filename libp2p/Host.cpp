@@ -20,23 +20,24 @@
  * @date 2014
  */
 
-#include <set>
-#include <chrono>
-#include <thread>
-#include <mutex>
-#include <memory>
-#include <boost/algorithm/string.hpp>
-#include <libdevcore/Common.h>
+#include "Host.h"
+#include "Capability.h"
+#include "Common.h"
+#include "HostCapability.h"
+#include "RLPxHandshake.h"
+#include "Session.h"
+#include "UPnP.h"
 #include <libdevcore/Assertions.h>
+#include <libdevcore/Common.h>
 #include <libdevcore/CommonIO.h>
 #include <libdevcore/Exceptions.h>
 #include <libdevcore/FileSystem.h>
-#include "Session.h"
-#include "Common.h"
-#include "Capability.h"
-#include "UPnP.h"
-#include "RLPxHandshake.h"
-#include "Host.h"
+#include <boost/algorithm/string.hpp>
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <thread>
 using namespace std;
 using namespace dev;
 using namespace dev::p2p;
@@ -97,12 +98,10 @@ bytes ReputationManager::data(SessionFace const& _s, std::string const& _sub) co
     return bytes();
 }
 
-const unsigned Host::c_timerInterval = 100;
-
-Host::Host(string const& _clientVersion, KeyPair const& _alias, NetworkPreferences const& _n):
+Host::Host(string const& _clientVersion, KeyPair const& _alias, NetworkConfig const& _n):
     Worker("p2p", 0),
     m_clientVersion(_clientVersion),
-    m_netPrefs(_n),
+    m_netConfig(_n),
     m_ifAddresses(Network::getInterfaceAddresses()),
     m_ioService(2),
     m_tcp4Acceptor(m_ioService),
@@ -112,7 +111,7 @@ Host::Host(string const& _clientVersion, KeyPair const& _alias, NetworkPreferenc
     cnetnote << "Id: " << id();
 }
 
-Host::Host(string const& _clientVersion, NetworkPreferences const& _n, bytesConstRef _restoreNetwork):
+Host::Host(string const& _clientVersion, NetworkConfig const& _n, bytesConstRef _restoreNetwork):
     Host(_clientVersion, networkAlias(_restoreNetwork), _n)
 {
     m_restoreNetwork = _restoreNetwork.toBytes();
@@ -258,7 +257,7 @@ void Host::startPeerSession(Public const& _id, RLP const& _rlp, unique_ptr<RLPXF
     }
     if (p->isOffline())
         p->m_lastConnected = std::chrono::system_clock::now();
-    p->endpoint.address = _s->remoteEndpoint().address();
+    p->endpoint.setAddress(_s->remoteEndpoint().address());
 
     auto protocolVersion = _rlp[0].toInt<unsigned>();
     auto clientVersion = _rlp[1].toString();
@@ -286,7 +285,10 @@ void Host::startPeerSession(Public const& _id, RLP const& _rlp, unique_ptr<RLPXF
             << " " << _id << " " << showbase << capslog.str() << " " << dec << listenPort;
 
     // create session so disconnects are managed
-    shared_ptr<SessionFace> ps = make_shared<Session>(this, move(_io), _s, p, PeerSessionInfo({_id, clientVersion, p->endpoint.address.to_string(), listenPort, chrono::steady_clock::duration(), _rlp[2].toSet<CapDesc>(), 0, map<string, string>(), protocolVersion}));
+    shared_ptr<SessionFace> ps = make_shared<Session>(this, move(_io), _s, p,
+        PeerSessionInfo({_id, clientVersion, p->endpoint.address().to_string(), listenPort,
+            chrono::steady_clock::duration(), _rlp[2].toSet<CapDesc>(), 0, map<string, string>(),
+            protocolVersion}));
     if (protocolVersion < dev::p2p::c_protocolVersion - 1)
     {
         ps->disconnect(IncompatibleProtocol);
@@ -298,7 +300,7 @@ void Host::startPeerSession(Public const& _id, RLP const& _rlp, unique_ptr<RLPXF
         return;
     }
 
-    if (m_netPrefs.pin && !isRequiredPeer(_id))
+    if (m_netConfig.pin && !isRequiredPeer(_id))
     {
         cdebug << "Unexpected identity from peer (got" << _id << ", must be one of " << m_requiredPeers << ")";
         ps->disconnect(UnexpectedIdentity);
@@ -385,26 +387,26 @@ void Host::determinePublic()
     // set m_tcpPublic := listenIP (if public) > public > upnp > unspecified address.
     
     auto ifAddresses = Network::getInterfaceAddresses();
-    auto laddr = m_netPrefs.listenIPAddress.empty() ? bi::address() : bi::address::from_string(m_netPrefs.listenIPAddress);
+    auto laddr = m_netConfig.listenIPAddress.empty() ? bi::address() : bi::address::from_string(m_netConfig.listenIPAddress);
     auto lset = !laddr.is_unspecified();
-    auto paddr = m_netPrefs.publicIPAddress.empty() ? bi::address() : bi::address::from_string(m_netPrefs.publicIPAddress);
+    auto paddr = m_netConfig.publicIPAddress.empty() ? bi::address() : bi::address::from_string(m_netConfig.publicIPAddress);
     auto pset = !paddr.is_unspecified();
     
     bool listenIsPublic = lset && isPublicAddress(laddr);
     bool publicIsHost = !lset && pset && ifAddresses.count(paddr);
     
     bi::tcp::endpoint ep(bi::address(), m_listenPort);
-    if (m_netPrefs.traverseNAT && listenIsPublic)
+    if (m_netConfig.traverseNAT && listenIsPublic)
     {
         cnetnote << "Listen address set to Public address: " << laddr << ". UPnP disabled.";
         ep.address(laddr);
     }
-    else if (m_netPrefs.traverseNAT && publicIsHost)
+    else if (m_netConfig.traverseNAT && publicIsHost)
     {
         cnetnote << "Public address set to Host configured address: " << paddr << ". UPnP disabled.";
         ep.address(paddr);
     }
-    else if (m_netPrefs.traverseNAT)
+    else if (m_netConfig.traverseNAT)
     {
         bi::address natIFAddr;
         ep = Network::traverseNAT(lset && ifAddresses.count(laddr) ? std::set<bi::address>({laddr}) : ifAddresses, m_listenPort, natIFAddr);
@@ -497,6 +499,17 @@ std::unordered_map<Public, std::string> Host::pocHosts()
     };
 }
 
+void Host::registerCapability(std::shared_ptr<HostCapabilityFace> const& _cap)
+{
+    registerCapability(_cap, _cap->name(), _cap->version());
+}
+
+void Host::registerCapability(
+    std::shared_ptr<HostCapabilityFace> const& _cap, std::string const& _name, u256 const& _version)
+{
+    m_capabilities[std::make_pair(_name, _version)] = _cap;
+}
+
 void Host::addPeer(NodeSpec const& _s, PeerType _t)
 {
     if (_t == PeerType::Optional)
@@ -514,8 +527,14 @@ void Host::addNode(NodeID const& _node, NodeIPEndpoint const& _endpoint)
         else
             return;
 
-    if (_endpoint.tcpPort < 30300 || _endpoint.tcpPort > 30305)
-        cnetdetails << "Non-standard port being recorded: " << _endpoint.tcpPort;
+    if (_node == id())
+    {
+        cnetdetails << "Ingoring the request to connect to self " << _node;
+        return;
+    }
+
+    if (_endpoint.tcpPort() < 30300 || _endpoint.tcpPort() > 30305)
+        cnetdetails << "Non-standard port being recorded: " << _endpoint.tcpPort();
 
     addNodeToNodeTable(Node(_node, _endpoint));
 }
@@ -530,6 +549,12 @@ void Host::requirePeer(NodeID const& _n, NodeIPEndpoint const& _endpoint)
     if (!m_run)
         return;
     
+    if (_n == id())
+    {
+        cnetdetails << "Ingoring the request to connect to self " << _n;
+        return;
+    }
+
     Node node(_n, _endpoint, PeerType::Required);
     if (_n)
     {
@@ -703,7 +728,7 @@ void Host::run(boost::system::error_code const&)
             bool required = p.second->peerType == PeerType::Required;
             if (haveSession && required)
                 reqConn++;
-            else if (!haveSession && p.second->shouldReconnect() && (!m_netPrefs.pin || required))
+            else if (!haveSession && p.second->shouldReconnect() && (!m_netConfig.pin || required))
                 toConnect.push_back(p.second);
         }
     }
@@ -712,7 +737,7 @@ void Host::run(boost::system::error_code const&)
         if (p->peerType == PeerType::Required && reqConn++ < m_idealPeerCount)
             connect(p);
     
-    if (!m_netPrefs.pin)
+    if (!m_netConfig.pin)
     {
         unsigned const maxSlots = m_idealPeerCount + reqConn;
         unsigned occupiedSlots = peerCount() + m_pendingPeerConns.size();
@@ -751,7 +776,7 @@ void Host::startedWorking()
         h.second->onStarting();
     
     // try to open acceptor (todo: ipv6)
-    int port = Network::tcp4Listen(m_tcp4Acceptor, m_netPrefs);
+    int port = Network::tcp4Listen(m_tcp4Acceptor, m_netConfig);
     if (port > 0)
     {
         m_listenPort = port;
@@ -765,7 +790,7 @@ void Host::startedWorking()
         m_ioService,
         m_alias,
         NodeIPEndpoint(bi::address::from_string(listenAddress()), listenPort(), listenPort()),
-        m_netPrefs.discovery
+        m_netConfig.discovery
     );
     nodeTable->setEventHandler(new HostNodeTableHandler(*this));
     DEV_GUARDED(x_nodeTable)
@@ -838,7 +863,7 @@ bytes Host::saveNetwork() const
     for (auto const& p: peers)
     {
         // todo: ipv6
-        if (!p.endpoint.address.is_v4())
+        if (!p.endpoint.address().is_v4())
             continue;
 
         // Only save peers which have connected within 2 days, with properly-advertised port and public IP address
@@ -991,4 +1016,16 @@ bool Host::addNodeToNodeTable(Node const& _node, NodeTable::NodeRelation _relati
 
     nodeTable->addNode(_node, _relation);
     return true;
+}
+
+std::vector<std::pair<std::shared_ptr<SessionFace>, std::shared_ptr<Peer>>> Host::peerSessions(
+    std::string const& _name, u256 const& _version) const
+{
+    RecursiveGuard l(x_sessions);
+    std::vector<std::pair<std::shared_ptr<SessionFace>, std::shared_ptr<Peer>>> ret;
+    for (auto const& i : m_sessions)
+        if (std::shared_ptr<SessionFace> s = i.second.lock())
+            if (s->capabilities().count(std::make_pair(_name, _version)))
+                ret.push_back(make_pair(s, s->peer()));
+    return ret;
 }

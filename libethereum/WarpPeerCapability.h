@@ -61,8 +61,8 @@ public:
 class WarpPeerCapability : public p2p::Capability
 {
 public:
-    WarpPeerCapability(std::shared_ptr<p2p::SessionFace> _s, p2p::HostCapabilityFace* _h,
-        unsigned _i, p2p::CapDesc const& _cap);
+    WarpPeerCapability(std::weak_ptr<p2p::SessionFace> _s, std::string const& _name,
+        unsigned _messageCount, unsigned _offset, p2p::CapDesc const& _cap);
 
     static std::string name() { return "par"; }
 
@@ -97,7 +97,7 @@ public:
 private:
     using p2p::Capability::sealAndSend;
 
-    bool interpret(unsigned _id, RLP const& _r) override;
+    bool interpretCapabilityPacket(unsigned _id, RLP const& _r) override;
 
     void onDisconnect() override;
 
