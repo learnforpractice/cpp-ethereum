@@ -7,7 +7,7 @@
 	url = https://github.com/learnforpractice/tests.git
 [submodule "hera"]
 	path = hera
-	url = https://github.com/ethereum/hera
+	url = https://github.com/learnforpractice/hera
 [submodule "evmc"]
 	path = evmc
 	url = https://github.com/ethereum/evmc

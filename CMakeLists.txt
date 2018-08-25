@@ -67,9 +67,7 @@ endif()
 
 add_subdirectory(evmc)
 
-if (HERA)
-    add_subdirectory(hera)
-endif()
+add_subdirectory(hera)
 
 #Global include path for all libs.
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
