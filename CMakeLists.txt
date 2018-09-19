@@ -47,7 +47,7 @@ find_package(libscrypt CONFIG REQUIRED)
 hunter_add_package(ethash)
 find_package(ethash CONFIG REQUIRED)
 
-include(ProjectSecp256k1)
+#include(ProjectSecp256k1)
 #include(ProjectLibFF)
 
 find_package(Threads)
