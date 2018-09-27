@@ -29,6 +29,9 @@ include(EthUtils)
 #hunter_add_package(Boost COMPONENTS program_options filesystem system thread context fiber log)
 #find_package(Boost CONFIG REQUIRED program_options filesystem system thread context fiber log)
 
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC" )
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -fPIC" )
+
 hunter_add_package(jsoncpp)
 find_package(jsoncpp CONFIG REQUIRED)
 
